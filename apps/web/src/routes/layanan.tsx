@@ -1,15 +1,12 @@
 import type { Route } from './+types/layanan';
-import { getProducts, EcommerceApiError } from '@/api/ecommerce-api';
+import { getProducts } from '@/api/ecommerce-api';
 import { ProductGrid } from '@/components/product-grid';
 import { seo } from '@/lib/seo';
 import { heroImage } from '@/data/content';
 export async function loader() {
   try {
     return await getProducts({ exclude_types: 'subscription', limit: 100 });
-  } catch (error) {
-    if (error instanceof EcommerceApiError && error.status === 404) {
-      throw new Response('Layanan tidak ditemukan', { status: 404 });
-    }
+  } catch {
     // Keep the services page accessible while the external Hostinger store is down.
     // ProductGrid already has an honest empty-catalogue state.
     console.warn('SNBM Creator storefront is currently unavailable.');
