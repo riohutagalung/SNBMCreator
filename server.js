@@ -1,40 +1,34 @@
-import { spawn } from 'node:child_process';
+import express from 'express';
+import { createRequestHandler } from '@react-router/express';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-// Explicit Node.js entry point for platforms that require an entry file.
-// Keep the existing React Router SSR server and its static asset handling.
-const repoRoot = path.dirname(fileURLToPath(import.meta.url));
-const serverBuild = path.join(repoRoot, 'dist', 'apps', 'web', 'server', 'index.js');
-const candidates = [
-  path.join(repoRoot, 'node_modules', '.bin', 'react-router-serve'),
-  path.join(repoRoot, 'apps', 'web', 'node_modules', '.bin', 'react-router-serve'),
-];
-const cli = candidates.find(existsSync);
+// Hostinger manages the Node.js process. Start the SSR server directly
+// instead of spawning a second process (which can exceed shared-host limits).
+const root = path.dirname(fileURLToPath(import.meta.url));
+const clientDir = path.join(root, 'dist', 'apps', 'web', 'client');
+const serverFile = path.join(root, 'dist', 'apps', 'web', 'server', 'index.js');
 
-if (!existsSync(serverBuild)) {
-  console.error(`SNBM Creator: server build not found at ${serverBuild}. Run npm run build first.`);
-  process.exit(1);
-}
-if (!cli) {
-  console.error('SNBM Creator: react-router-serve executable not installed. Run npm install first.');
-  process.exit(1);
+if (!existsSync(serverFile)) {
+  throw new Error(`SNBM Creator SSR build is missing: ${serverFile}. Run npm run build.`);
 }
 
-const app = spawn(cli, [serverBuild], {
-  cwd: repoRoot,
-  env: { ...process.env, PORT: process.env.PORT || '3000' },
-  stdio: 'inherit',
+const app = express();
+app.disable('x-powered-by');
+
+// Static assets are produced under the React Router client build directory.
+app.use(express.static(clientDir, { maxAge: '1h', index: false }));
+
+const serverBuild = await import(pathToFileURL(serverFile).href);
+app.use(createRequestHandler({ build: serverBuild, mode: process.env.NODE_ENV || 'production' }));
+
+const port = Number(process.env.PORT) || 3000;
+const server = app.listen(port, '0.0.0.0', () => {
+  console.log(`SNBM Creator SSR listening on 0.0.0.0:${port}`);
 });
 
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, () => app.kill(signal));
-}
-app.on('error', error => {
-  console.error('SNBM Creator: unable to start SSR server:', error);
+server.on('error', (error) => {
+  console.error('SNBM Creator could not start the SSR server:', error);
   process.exitCode = 1;
-});
-app.on('exit', (code, signal) => {
-  process.exit(code ?? (signal ? 0 : 1));
 });
