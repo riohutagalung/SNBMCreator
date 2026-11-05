@@ -2,20 +2,11 @@
 
 migrate(
   (app) => {
-    // --- seed the admin account (closed sign-up; only migrations create users) ---
-    const users = app.findCollectionByNameOrId("users");
-    const existingAdmins = app.findRecordsByFilter("users", "email = 'admin@snbmcreator.id'");
-    if (existingAdmins.length === 0) {
-      const admin = new Record(users, {
-        email: "admin@snbmcreator.id",
-        name: "Admin SNBM Creator",
-        role: "admin",
-      });
-      admin.set("password", "SnbmCreator2026!");
-      app.save(admin);
-    }
+    // The admin account is provisioned by 1793869600_secure_admin_bootstrap.js
+    // using SNBM_ADMIN_EMAIL and SNBM_ADMIN_PASSWORD. Never commit credentials.
 
-    // --- seed default editable landing-page content ---
+    // Seed the first editable landing-page fields. New CMS fields are added by
+    // 1793869601_expand_homepage_cms.js. Existing values are intentionally kept.
     const content = app.findCollectionByNameOrId("snbm_content");
     const defaults = [
       { key: "hero_title", label: "Judul utama (baris 1)", type: "text", value: "Host yang tepat." },
@@ -28,11 +19,10 @@ migrate(
     for (const d of defaults) {
       const existing = app.findRecordsByFilter("snbm_content", `key = '${d.key}'`);
       if (existing.length > 0) continue;
-      const rec = new Record(content, d);
-      app.save(rec);
+      app.save(new Record(content, d));
     }
   },
   () => {
-    // down: leave seeded records in place (re-running up is idempotent).
+    // Keep editable content on rollback; it may contain the owner's copy.
   },
 );
