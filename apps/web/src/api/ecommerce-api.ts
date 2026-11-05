@@ -913,11 +913,17 @@ export const isBookingSlotTakenError = (error: unknown): boolean =>
 const getBrowserTimeZone = (): string => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
 const TRANSIENT_FETCH_RETRY_DELAY_MS = 250;
+// Storefront GET requests can run in SSR loaders. Without a deadline, an
+// unavailable external store can make /layanan and /sitemap.xml hang until
+// Hostinger terminates the request. Do not force a timeout on checkout POSTs.
+const STOREFRONT_GET_TIMEOUT_MS = 6000;
 
 const request = async (url: string, init?: RequestInit): Promise<any> => {
+	const isGet = !init?.method || init.method.toUpperCase() === 'GET';
 	const send = () =>
 		fetch(url, {
 			...init,
+			...(isGet && { signal: init?.signal ?? AbortSignal.timeout(STOREFRONT_GET_TIMEOUT_MS) }),
 			headers: {
 				'Content-Type': 'application/json',
 				...init?.headers,
@@ -933,7 +939,7 @@ const request = async (url: string, init?: RequestInit): Promise<any> => {
 		// retry on an idempotent GET cannot duplicate anything and usually succeeds moments
 		// later. A POST that failed mid-flight may still have been applied (checkout,
 		// booking), so it is never re-sent.
-		if (init?.method && init.method.toUpperCase() !== 'GET') {
+		if (!isGet || (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError'))) {
 			throw error;
 		}
 

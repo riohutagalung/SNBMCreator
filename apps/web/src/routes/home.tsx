@@ -13,8 +13,10 @@ import { Collaborate } from '@/components/home/collaborate';
 
 export async function loader() {
   const content: Record<string, string> = {};
-  // Avoid holding up public pages with health-check retries before backend env is configured.
-  if (process.env.PB_SUPERUSER_EMAIL && process.env.PB_SUPERUSER_PASSWORD) {
+  // Do not block the public homepage on a local PocketBase port when the
+  // external backend has not been configured. Credentials alone do not
+  // establish a reachable backend.
+  if (process.env.POCKETBASE_URL && process.env.PB_SUPERUSER_EMAIL && process.env.PB_SUPERUSER_PASSWORD) {
     try {
       const result = await pocketbaseAdmin.listRecords<{ key: string; value: string }>('snbm_content', { perPage: 200 });
       for (const record of result.items) content[record.key] = record.value || '';

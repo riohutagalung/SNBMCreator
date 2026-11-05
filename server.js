@@ -20,15 +20,24 @@ app.disable('x-powered-by');
 // Static assets are produced under the React Router client build directory.
 app.use(express.static(clientDir, { maxAge: '1h', index: false }));
 
-const serverBuild = await import(pathToFileURL(serverFile).href);
-app.use(createRequestHandler({ build: serverBuild, mode: process.env.NODE_ENV || 'production' }));
+// Hostinger's lsnode loader calls require() on this ESM entry. Avoid any
+// top-level await so Node 22 can load the entry synchronously; start the
+// async import only after module initialization has completed.
+async function start() {
+  const serverBuild = await import(pathToFileURL(serverFile).href);
+  app.use(createRequestHandler({ build: serverBuild, mode: process.env.NODE_ENV || 'production' }));
 
-const port = Number(process.env.PORT) || 3000;
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log(`SNBM Creator SSR listening on 0.0.0.0:${port}`);
-});
+  const port = Number(process.env.PORT) || 3000;
+  const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`SNBM Creator SSR listening on 0.0.0.0:${port}`);
+  });
+  server.on('error', (error) => {
+    console.error('SNBM Creator could not start the SSR server:', error);
+    process.exitCode = 1;
+  });
+}
 
-server.on('error', (error) => {
-  console.error('SNBM Creator could not start the SSR server:', error);
-  process.exitCode = 1;
+void start().catch((error) => {
+  console.error('SNBM Creator failed to initialize the SSR server:', error);
+  process.exit(1);
 });

@@ -22,24 +22,33 @@ jobs:
         run: npm run typecheck
       - name: Build website
         run: npm run build
-      - name: Verify SSR server starts and handles requests
+      - name: Verify Hostinger require startup, routes and assets
         shell: bash
         run: |
-          NODE_ENV=production PORT=3000 node server.js > /tmp/snbm-server.log 2>&1 &
+          set -euo pipefail
+          # Hostinger lsnode.js uses require() to load this ESM entry.
+          NODE_ENV=production PORT=3000 PB_SUPERUSER_EMAIL=ci@example.invalid PB_SUPERUSER_PASSWORD=ci-placeholder-not-secret node -e "require('./server.js')" > /tmp/snbm-server.log 2>&1 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
-          for i in {1..25}; do
-            if curl -fsS http://127.0.0.1:3000/api/health; then
-              echo
-              exit 0
+          for i in {1..50}; do
+            if curl -fsS http://127.0.0.1:3000/api/health -o /tmp/snbm-health.json 2>/dev/null; then
+              break
             fi
             if ! kill -0 "$SERVER_PID" 2>/dev/null; then
               echo 'SSR server exited unexpectedly'
               cat /tmp/snbm-server.log
               exit 1
             fi
-            sleep 1
+            sleep 0.2
           done
-          echo 'SSR server did not become healthy'
-          cat /tmp/snbm-server.log
-          exit 1
+          grep -q '"ok":true' /tmp/snbm-health.json
+          RESPONSE_TIME=$(curl -fsS -w '%{time_total}' -o /tmp/snbm-home.html http://127.0.0.1:3000/)
+          python3 -c 'import sys; assert float(sys.argv[1]) < 3, "Home blocked on unconfigured PocketBase"' "$RESPONSE_TIME"
+          grep -q 'SNBM Creator' /tmp/snbm-home.html
+          for url in /login /layanan /kontak /gabung-host /blog /robots.txt /sitemap.xml; do
+            curl -fsS --max-time 12 -o /dev/null "http://127.0.0.1:3000$url"
+          done
+          CSS_FILE=$(find dist/apps/web/client/assets -maxdepth 1 -name 'index-*.css' -print -quit)
+          test -n "$CSS_FILE"
+          curl -fsS -o /dev/null "http://127.0.0.1:3000/assets/$(basename "$CSS_FILE")"
+          echo 'Hostinger-style SSR startup, public pages, SEO routes and CSS passed.'

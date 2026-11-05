@@ -28,8 +28,8 @@ export function HostJoinForm() {
 					</select>
 				</label>
 				<label>Gaya
-					<select name="style" defaultValue="Belum dipilih">
-						<option value="Belum dipilih">Pilih gaya</option>
+					<select name="style" defaultValue="">
+						<option value="">Pilih gaya</option>
 						<option value="Hijab">Hijab</option>
 						<option value="Nonhijab">Nonhijab</option>
 						<option value="Bisa keduanya">Bisa keduanya</option>

@@ -47,11 +47,16 @@ function serializeSitemap(origin: string, entries: SitemapEntry[]): string {
 async function getDynamicEntries(): Promise<SitemapEntry[]> {
  const entries = new Map<string, SitemapEntry>();
  let offset = 0;
- for (;;) {
-  const {products,count} = await getProducts({exclude_types:'subscription',limit:2000,offset});
-  for(const p of products) if(!p.seo.noindex) entries.set(p.id,{path:`/product/${p.url_handle}`,lastmod:p.updated_at||undefined});
-  offset += products.length;
-  if(offset >= count || !products.length) break;
+ try {
+  for (;;) {
+   const {products,count} = await getProducts({exclude_types:'subscription',limit:2000,offset});
+   for(const p of products) if(!p.seo.noindex) entries.set(p.id,{path:`/product/${p.url_handle}`,lastmod:p.updated_at||undefined});
+   offset += products.length;
+   if(offset >= count || !products.length) break;
+  }
+ } catch {
+  // Do not turn the entire public sitemap into a 5xx when the store API is offline.
+  console.warn('SNBM Creator sitemap: external store catalogue unavailable.');
  }
  return [...entries.values(), ...articles.map(a=>({path:`/blog/${a.slug}`,lastmod:'2026-11-05'}))];
 }
