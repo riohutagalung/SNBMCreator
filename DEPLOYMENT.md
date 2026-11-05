@@ -20,8 +20,9 @@ In hPanel:
 6. Use npm, not Bun. The root scripts are prepared for Hostinger:
    - Install: `npm install`
    - Build: `npm run build`
-   - Start: `npm start`
-7. Attach `snbmcreator.com` to this Node.js website and activate HTTPS in hPanel.
+   - Start: `npm start` (uses the repository's `server.js` entry point to launch React Router SSR)
+7. Under the **Other** framework preset, set **Entry file** to `server.js` (not blank); keep **Output directory** as `dist/apps/web`.
+8. Attach `snbmcreator.com` to this Node.js website and activate HTTPS in hPanel.
 
 The root production `start` command launches only the web app. It intentionally does not start PocketBase. For local development, `npm run dev` still starts both services; `npm run start:stack` is for a self-managed server where both processes are allowed.
 
