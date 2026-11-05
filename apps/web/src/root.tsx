@@ -15,11 +15,12 @@ import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { CookieBanner } from '@/components/cookie-banner';
 import { SnbmIntro } from '@/components/snbm-intro';
-import { CartProvider } from '@/hooks/use-ecommerce-cart';
+import { LanguageProvider } from '@/lib/language';
+import { WebMcpTools } from '@/components/webmcp-tools';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'stylesheet', href: stylesheet },
-	{ rel: 'icon', href: '/favicon.png', type: 'image/png' },
+	{ rel: 'icon', href: '/assets/snbm/favicon.png', type: 'image/png' },
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
 	{
 		rel: 'preconnect',
@@ -79,7 +80,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-	return <CartProvider><SnbmIntro /><SiteHeader /><Outlet /><SiteFooter /><CookieBanner /></CartProvider>;
+	return <LanguageProvider><WebMcpTools /><SnbmIntro /><SiteHeader /><Outlet /><SiteFooter /><CookieBanner /></LanguageProvider>;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

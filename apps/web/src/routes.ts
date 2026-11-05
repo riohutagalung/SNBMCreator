@@ -3,6 +3,9 @@ import { type RouteConfig, index, route } from '@react-router/dev/routes';
 export default [
 	index('routes/home.tsx'),
  route('layanan', 'routes/layanan.tsx'),
+ route('tentang', 'routes/tentang.tsx'),
+ route('privasi', 'routes/privasi.tsx'),
+ route('syarat', 'routes/syarat.tsx'),
  route('product/:handle', 'routes/product.$handle.tsx'),
  route('kontak', 'routes/kontak.tsx'),
  route('gabung-host', 'routes/gabung-host.tsx'),

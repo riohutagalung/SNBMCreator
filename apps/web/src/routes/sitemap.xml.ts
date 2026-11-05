@@ -8,7 +8,7 @@ type SitemapEntry = {
 	lastmod?: string;
 };
 
-const STATIC_PATHS = ['/', '/layanan', '/kontak', '/gabung-host', '/blog'];
+const STATIC_PATHS = ['/', '/tentang', '/layanan', '/kontak', '/gabung-host', '/blog', '/privasi', '/syarat'];
 
 function escapeXml(value: string): string {
 	return value
@@ -54,10 +54,7 @@ async function getDynamicEntries(): Promise<SitemapEntry[]> {
    offset += products.length;
    if(offset >= count || !products.length) break;
   }
- } catch {
-  // Do not turn the entire public sitemap into a 5xx when the store API is offline.
-  console.warn('SNBM Creator sitemap: external store catalogue unavailable.');
- }
+ } catch { console.warn('Sitemap: product catalogue temporarily unavailable'); }
  return [...entries.values(), ...articles.map(a=>({path:`/blog/${a.slug}`,lastmod:'2026-11-05'}))];
 }
 

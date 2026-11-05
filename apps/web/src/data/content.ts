@@ -1,4 +1,4 @@
-export const heroImage = 'https://images.unsplash.com/photo-1631821657340-b07983bfc5f9?w=1344&h=768&fit=crop&q=80';
+export const heroImage = '/assets/snbm/hero-still.webp';
 export const categories = ['Fashion muslim', 'Fashion wanita', 'Tas wanita', 'Fashion anak', 'Underwear'];
 export const hosts = [
  {name:'Host reguler · Hijab', size:'55–65 kg', category:'Fashion muslim', image:'https://images.unsplash.com/photo-1685464646323-b1a5b4d30c7a?w=896&h=1216&fit=crop&q=80'},

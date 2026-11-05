@@ -1,6 +1,6 @@
 import type { Route } from './+types/blog';
 import { seo } from '@/lib/seo';
-import { heroImage } from '@/data/content';
 import { Insights } from '@/components/home/insights';
-export function meta({matches,location}:Route.MetaArgs){return seo({matches,location},{title:'Insight Live Shopping & Fashion — SNBM Creator',description:'Baca panduan memilih host yang relevan, memahami GMV, dan menyusun strategi live shopping fashion melalui insight editorial dari SNBM Creator.',image:heroImage,jsonLd:{'@context':'https://schema.org','@type':'CollectionPage',name:'Insight SNBM Creator'}});}
-export default function Blog(){return <main><div className="page-rail blog-heading"><span className="eyebrow">JURNAL CREATOR</span><h1>Ide baru.<br/><span>Perspektif baru.</span></h1><p>Panduan praktis untuk brand dan host yang ingin melangkah lebih jauh.</p></div><Insights/></main>;}
+import { useLanguage } from '@/lib/language';
+export function meta({matches,location}:Route.MetaArgs){return seo({matches,location},{title:'Artikel Live Commerce | SNBM Creator',description:'Catatan SNBM Creator tentang pemilihan host, produk fashion, dan pemahaman GMV dalam live shopping.',jsonLd:{'@context':'https://schema.org','@type':'CollectionPage',name:'Artikel SNBM Creator',url:'https://snbmcreator.com/blog'}})}
+export default function Blog(){const {pick}=useLanguage();return <main><div className="page-rail blog-heading"><span className="eyebrow">{pick('ARTIKEL SNBM','SNBM INSIGHTS')}</span><h1>{pick('Cerita dan catatan','Notes from')}<br/><span>{pick('dari dunia live.','the live floor.')}</span></h1><p>{pick('Pembahasan singkat yang bisa dipakai seller, brand, dan host dalam pekerjaan sehari-hari.','Practical reading for sellers, brands, and hosts working in live commerce.')}</p></div><Insights/></main>}

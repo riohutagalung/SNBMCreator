@@ -1,16 +1,26 @@
 import { Link } from 'react-router';
 import { ArrowUpRight, ArrowDown, Radio } from 'lucide-react';
-import { heroImage as defaultHeroImage } from '@/data/content';
+import { useLanguage } from '@/lib/language';
 
-type HeroContent = Partial<Record<'hero_title' | 'hero_title_highlight' | 'hero_intro' | 'hero_image' | 'hero_caption' | 'hero_caption_strong', string>>;
-
-export function Hero({ content }: { content?: Record<string, string> }) {
- const c = content || {};
- const title = c.hero_title || 'Host yang tepat.';
- const highlight = c.hero_title_highlight || 'makin hebat.';
- const intro = c.hero_intro || 'Kami mempertemukan brand fashion dengan host creator yang relevan. Bukan hanya menjual produk—membangun koneksi yang menggerakkan penjualan.';
- const image = c.hero_image || defaultHeroImage;
- const caption = c.hero_caption || 'Beragam gaya.';
- const captionStrong = c.hero_caption_strong || 'Satu dampak nyata.';
- return <section className="hero"><div className="hero-top"><span className="eyebrow"><span className="live-dot"/> LIVE SHOPPING. KONEKSI NYATA.</span><span className="location">JAKARTA BARAT → INDONESIA</span></div><div className="hero-copy"><h1>{title}<br/>Brand <span>{highlight}</span></h1><div className="hero-intro"><p>{intro}</p><Link className="button" to="/layanan">Temukan layanan Anda <ArrowUpRight size={19}/></Link><Link className="text-link" to="/gabung-host">Punya energi di depan kamera? Jadi host →</Link></div></div><div className="hero-media"><img src={image} alt="Visual editorial fashion untuk live shopping SNBM Creator" width="1344" height="768" fetchPriority="high"/><div className="image-overlay"/><div className="live-label"><Radio size={16}/> SIAP TAMPIL LIVE</div><div className="media-caption">{caption}<br/><strong>{captionStrong}</strong></div><div className="floating-note"><span>PADANAN YANG TEPAT</span><strong>Setiap brand.<br/>Ada host-nya.</strong><ArrowUpRight/></div><span className="photo-note">VISUAL ILUSTRASI</span></div><div className="hero-bottom"><span>DIPANDU CREATOR. BERFOKUS FASHION.</span><a href="#kategori">Kenali dunia kami <ArrowDown size={16}/></a></div></section>;
+export function Hero({ content: _content }: { content?: Record<string, string> }) {
+  const { pick } = useLanguage();
+  return <section className="hero" id="beranda">
+    <div className="hero-top"><span className="eyebrow"><span className="live-dot"/> {pick('SELLER FASHION & AGENSI LIVE COMMERCE','FASHION SELLER & LIVE COMMERCE AGENCY')}</span><span className="location">JAKARTA BARAT · INDONESIA</span></div>
+    <div className="hero-copy">
+      <h1>{pick('Kami jual produk.','We sell fashion.')}<br/><span>{pick('Kami bangun host.','We develop hosts.')}</span></h1>
+      <div className="hero-intro"><p>{pick('SNBM Creator menjalankan penjualan fashion sekaligus membina host untuk live shopping. Tim in-house kami hadir untuk operasional harian, sementara host freelance bisa bergabung sesuai kebutuhan sesi dan kampanye.','SNBM Creator sells fashion products and develops live-shopping hosts. Our in-house team supports daily operations, while freelance hosts join sessions and campaigns as needed.')}</p>
+        <Link className="button" to="/kontak?jenis=brand">{pick('Kerja sama untuk brand','Partner with us')} <ArrowUpRight size={19}/></Link>
+        <Link className="text-link" to="/gabung-host">{pick('Ingin jadi host? Lihat pendaftaran','Want to host? Apply here')} <ArrowUpRight size={15}/></Link>
+      </div>
+    </div>
+    <div className="hero-media hero-media-refresh">
+      <video autoPlay muted loop playsInline preload="metadata" poster="/assets/snbm/hero-still.webp" aria-label={pick('Animasi AI fashion dan live shopping SNBM Creator','AI-generated fashion and live-shopping motion visual')}><source src="/assets/snbm/hero-fashion.webm" type="video/webm"/></video>
+      <img className="reduced-motion-poster" src="/assets/snbm/hero-still.webp" alt={pick('Ilustrasi fashion SNBM Creator','SNBM Creator fashion illustration')} loading="eager"/>
+      <div className="image-overlay"/>
+      <div className="live-label"><Radio size={16}/> {pick('LIVE SHOPPING FASHION','FASHION LIVE SHOPPING')}</div>
+      <div className="media-caption">{pick('Fashion wanita, muslim, tas, anak,','Women’s wear, modest fashion, bags, kidswear,')}<br/><strong>{pick('dan underwear.','and underwear.')}</strong></div>
+      <span className="photo-note">{pick('VISUAL AI / ILUSTRASI','AI-GENERATED VISUAL')}</span>
+    </div>
+    <div className="hero-bottom"><span>{pick('PRODUK. TALENTA. PENJUALAN.','PRODUCTS. PEOPLE. COMMERCE.')}</span><a href="#kategori">{pick('Lihat kategori','Explore categories')} <ArrowDown size={16}/></a></div>
+  </section>;
 }

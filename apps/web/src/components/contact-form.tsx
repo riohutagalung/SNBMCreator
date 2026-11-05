@@ -1,4 +1,41 @@
-import { useSearchParams, Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { pocketbaseClient } from '@/lib/pocketbase-client';
 import { useFormSubmission } from '@/hooks/use-form-submission';
-export function ContactForm(){const [params]=useSearchParams();const form=useFormSubmission({submit:(_v,data)=>pocketbaseClient.collection('snbm_enquiries').create(data)});return <main className="page-rail contact-page"><div><span className="eyebrow">MARI TERHUBUNG. MARI TAMPIL LIVE.</span><h1>Koneksi dimulai<br/>dari <span>sapaan.</span></h1><p className="page-intro">Punya brand yang ingin berkembang atau siap tampil sebagai host? Ceritakan kebutuhan Anda.</p><p>Basis operasional: <strong>Jakarta Barat, Indonesia.</strong><br/>Detail alamat studio dikonfirmasi sebelum kunjungan.</p><Link className="text-link" to="/layanan">Jadwalkan konsultasi lewat toko layanan →</Link><p className="subtle">Informasi dikumpulkan untuk menanggapi permintaan Anda. Data kontak tidak ditampilkan ke publik.</p></div><form className="contact-form" onSubmit={form.onSubmit}><input {...form.honeypotProps}/><label>Nama lengkap<input name="name" required maxLength={120} placeholder="Nama Anda"/></label><label>Email<input name="email" required type="email" placeholder="nama@email.com"/></label><label>Nomor WhatsApp<input name="phone" maxLength={30} type="tel" placeholder="08…"/></label><label>Saya ingin<select name="kind" defaultValue={params.get('jenis')==='host'?'Calon host':'Brand'}><option value="Brand">Bekerja sama sebagai brand</option><option value="Calon host">Mendaftar sebagai host</option><option value="Pertanyaan">Mengajukan pertanyaan</option></select></label><div className="form-pair"><label>Kota domisili<input name="city" placeholder="Jakarta Barat"/></label><label>Berat badan (calon host)<input name="weight" type="number" min="1" max="200" placeholder="kg"/></label></div><label>Gaya (calon host)<select name="style"><option value="Belum dipilih">Pilih bila mendaftar host</option><option>Hijab</option><option>Nonhijab</option></select></label><label>Ceritakan kebutuhan / pengalaman Anda<textarea name="message" required maxLength={3000} rows={4} defaultValue={params.get('kategori')?`Saya tertarik untuk kategori ${params.get('kategori')}. `:''} placeholder="Kategori brand, tujuan kampanye, atau pengalaman live Anda…"/></label><label className="check-label"><input type="checkbox" name="consent" value="true" required/> Saya setuju data ini digunakan SNBM Creator untuk menanggapi permintaan saya.</label><button className="button" disabled={form.isSubmitting}>{form.isSubmitting?'Mengirim…':'Kirim & mulai koneksi ↗'}</button>{form.isSuccess&&<p role="status">Terima kasih! Permintaan Anda tersimpan dan siap ditinjau tim SNBM Creator.</p>}{form.isError&&<p role="alert">Pesan belum terkirim. Periksa isian dan coba kembali.</p>}{Object.keys(form.fieldErrors).length>0&&<p role="alert">Pastikan nama, email, pesan, dan persetujuan terisi dengan benar.</p>}</form></main>;}
+import { useLanguage } from '@/lib/language';
+import { HostJoinForm } from '@/components/host-join-form';
+
+export function ContactForm() {
+ const [params, setParams] = useSearchParams();
+ const isHost = params.get('jenis') === 'host';
+ const { pick } = useLanguage();
+ const form = useFormSubmission({submit: (_values,data) => pocketbaseClient.collection('snbm_enquiries').create(data)});
+ return <main className="page-rail contact-page refreshed-contact"><div>
+  <span className="eyebrow">{pick('MULAI KOLABORASI','LET’S WORK TOGETHER')}</span>
+  <h1>{pick('Ceritakan kebutuhanmu.','Tell us what you need.')}</h1>
+  <p className="page-intro">{pick('Pilih jalur yang sesuai. Brand dan calon host punya formulir yang berbeda agar tim kami bisa meninjau informasi yang tepat.','Choose the right path. Brands and host applicants have different forms so we can review the right information.')}</p>
+  <div className="contact-choice" role="group" aria-label={pick('Jenis kolaborasi','Enquiry type')}>
+   <button type="button" className={!isHost?'selected':''} onClick={()=>setParams({jenis:'brand'})}>{pick('Kerja sama brand','Brand partnership')}</button>
+   <button type="button" className={isHost?'selected':''} onClick={()=>setParams({jenis:'host'})}>{pick('Mendaftar sebagai host','Apply as a host')}</button>
+  </div>
+  <p>{pick('Untuk pertanyaan umum, kirim email ke','For general enquiries, email')} <a href="mailto:contact@snbmcreator.com">contact@snbmcreator.com</a>.</p>
+  <p className="subtle">{pick('Berbasis di Jakarta Barat, Indonesia. Alamat kunjungan dibagikan setelah ada janji.','Based in West Jakarta, Indonesia. Meeting details are confirmed by appointment.')}</p>
+  <Link className="text-link" to="/privasi">{pick('Cara kami mengelola data pelamar','How we handle applicants’ information')}</Link>
+ </div>
+ {isHost ? <HostJoinForm/> : <form className="contact-form" onSubmit={form.onSubmit}>
+  <input {...form.honeypotProps}/>
+  <input type="hidden" name="kind" value="Brand" />
+  <label>{pick('Nama penanggung jawab','Contact name')}<input name="name" required maxLength={120} placeholder={pick('Nama lengkap','Full name')}/></label>
+  <div className="form-pair"><label>{pick('Email bisnis','Business email')}<input name="email" type="email" required placeholder="nama@brand.com"/></label><label>{pick('Nomor WhatsApp','WhatsApp number')}<input name="phone" type="tel" maxLength={30} placeholder="+62..."/></label></div>
+  <label>{pick('Nama brand / toko','Brand or store name')}<input name="brand_name" required maxLength={160} placeholder={pick('Nama brand atau toko','Brand or shop name')}/></label>
+  <div className="form-pair"><label>{pick('Kategori produk','Product category')}<select name="product_category" required defaultValue=""><option value="" disabled>{pick('Pilih kategori','Select category')}</option>{['Fashion muslim','Fashion wanita','Tas wanita','Fashion anak','Underwear','Lainnya'].map(x=><option key={x} value={x}>{x}</option>)}</select></label><label>{pick('Platform live','Live platform')}<select name="platform" required defaultValue=""><option value="" disabled>{pick('Pilih platform','Select platform')}</option><option>TikTok Shop</option><option>Shopee Live</option><option>Instagram Live</option><option>Lainnya</option></select></label></div>
+  <label>{pick('Kebutuhan kerja sama','What do you need?')}<select name="service_interest" required defaultValue=""><option value="" disabled>{pick('Pilih kebutuhan','Select service')}</option><option value="Host in-house">{pick('Host in-house','In-house host')}</option><option value="Host freelance">{pick('Host freelance','Freelance host')}</option><option value="Operasional live">{pick('Operasional live shopping','Live-shopping operations')}</option><option value="Kerja sama penjualan">{pick('Kerja sama penjualan produk','Product sales partnership')}</option><option value="Diskusi awal">{pick('Diskusi kebutuhan','Initial consultation')}</option></select></label>
+  <label>{pick('Tautan toko atau akun brand','Store or brand profile URL')}<input name="store_url" type="url" placeholder="https://"/></label>
+  <label>{pick('Ceritakan produk dan target kerja samanya','Tell us about your products and goals')}<textarea name="message" required rows={5} maxLength={3000} placeholder={pick('Sebutkan produk, frekuensi live, target, dan hal yang perlu kami ketahui.','Tell us about your products, schedule, objectives, and anything else we should know.')}/></label>
+  <label className="check-label"><input name="consent" type="checkbox" value="true" required/> {pick('Saya menyetujui penggunaan data ini untuk ditindaklanjuti oleh tim SNBM Creator.','I agree to the use of this data to respond to my enquiry.')}</label>
+  <button className="button" disabled={form.isSubmitting}>{form.isSubmitting ? pick('Mengirim...','Sending...') : pick('Kirim permintaan','Send enquiry')}</button>
+  {form.isSuccess && <p role="status">{pick('Pesan sudah tersimpan. Terima kasih, kami akan meninjaunya.','Your enquiry has been received. Thank you.')}</p>}
+  {form.isError && <p role="alert">{pick('Belum berhasil dikirim. Jika layanan sedang tidak tersedia, silakan email contact@snbmcreator.com.','Submission was not completed. If the service is unavailable, please email contact@snbmcreator.com.')}</p>}
+  {Object.entries(form.fieldErrors).map(([key,error])=><p key={key} role="alert">{key}: {error}</p>)}
+ </form>}
+ </main>;
+}

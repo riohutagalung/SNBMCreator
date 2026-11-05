@@ -1,71 +1,20 @@
 import { Link } from 'react-router';
 import { ArrowUpRight } from 'lucide-react';
-import { categories as defaultCategories } from '@/data/content';
+import { useLanguage } from '@/lib/language';
 
-type SiteContent = Record<string, string>;
-
-const listFrom = (value: string | undefined, fallback: string[]) =>
-  (value || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean).length
-    ? (value || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean)
-    : fallback;
-
-export function Agency({ content = {} }: { content?: SiteContent }) {
-  const c = content;
-  const categories = listFrom(c.categories_list, defaultCategories);
+const categories = [
+  ['Fashion muslim','Modest fashion'], ['Fashion wanita','Women’s fashion'], ['Tas wanita','Women’s bags'], ['Fashion anak','Kids’ fashion'], ['Underwear','Underwear']
+];
+export function Agency({ content: _content }: { content?: Record<string, string> }) {
+  const { pick } = useLanguage();
   const steps = [
-    [c.workflow_step_1_title || 'Kenali brand Anda', c.workflow_step_1_body || 'Kami mendalami kategori, karakter audiens, dan tujuan kampanye.'],
-    [c.workflow_step_2_title || 'Kurasi host yang relevan', c.workflow_step_2_body || 'Reguler atau big size, hijab atau nonhijab. Sesuaikan dengan produk Anda.'],
-    [c.workflow_step_3_title || 'Live, evaluasi, optimalkan', c.workflow_step_3_body || 'Presentasi produk, interaksi audiens, dan evaluasi performa untuk langkah berikutnya.'],
+    [pick('Kenali produk dan pembelinya','Understand the product and customer'),pick('Kami mulai dari kategori, keunggulan produk, harga, hingga pertanyaan yang sering muncul di sesi live.','We start with product categories, selling points, pricing, and the questions shoppers actually ask.')],
+    [pick('Siapkan host dan sesi','Prepare hosts and sessions'),pick('Host in-house atau freelance dipilih berdasarkan kebutuhan. Brief produk dan gaya komunikasi disiapkan sebelum tayang.','In-house or freelance hosts are matched to the project, with clear product briefs before each session.')],
+    [pick('Jalankan, catat, perbaiki','Go live, review, improve'),pick('Sesi live dijalankan, lalu hasilnya dievaluasi berdasarkan data yang tersedia, bukan sekadar ramai penonton.','We run live sessions and evaluate the available data, rather than focusing on viewer counts alone.')]
   ];
-
-  return (
-    <>
-      <section id="kategori" className="category-section">
-        <span className="eyebrow">{c.categories_eyebrow || 'FOKUS KATEGORI KAMI'}</span>
-        <div className="category-list">
-          {categories.map((category, i) => (
-            <Link key={category} to={`/kontak?kategori=${encodeURIComponent(category)}`}>
-              <span className="category-number">{String(i + 1).padStart(2, '0')}</span>
-              {category}<ArrowUpRight size={19}/>
-            </Link>
-          ))}
-        </div>
-      </section>
-      <section id="tentang" className="agency-section section-rail">
-        <div>
-          <span className="eyebrow">{c.about_eyebrow || '01 / TENTANG SNBM'}</span>
-          <h2 style={{ whiteSpace: 'pre-line' }}>{c.about_title || 'Koneksi yang pas.\nPotensi tanpa batas.'}</h2>
-        </div>
-        <div className="agency-story">
-          <p className="lead" style={{ whiteSpace: 'pre-line' }}>{c.about_lead || 'Fashion punya banyak wajah.\nBegitu juga host kami.'}</p>
-          <p>{c.about_body_1 || 'Berbasis di Jakarta Barat, SNBM Creator adalah agensi host creator untuk live shopping. Kami menghubungkan kebutuhan brand dengan kategori produk, ukuran tubuh, dan gaya host—berhijab maupun nonhijab.'}</p>
-          <p>{c.about_body_2 || 'Langkah kami dimulai dari Jakarta Barat, dengan visi membangun jaringan host di berbagai wilayah Indonesia. Karena koneksi yang kuat tidak mengenal batas kota.'}</p>
-          <Link className="text-link" to="/kontak">Bangun kolaborasi bersama kami <ArrowUpRight size={18}/></Link>
-        </div>
-      </section>
-      <section className="workflow section-rail">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">{c.workflow_eyebrow || '02 / CARA KAMI BEKERJA'}</span>
-            <h2 style={{ whiteSpace: 'pre-line' }}>{c.workflow_title || 'Dari briefing\nsampai live.'}</h2>
-          </div>
-          <p style={{ whiteSpace: 'pre-line' }}>{c.workflow_subtitle || 'Brand Anda, pendekatan yang personal.\nSeluruh proses dalam satu kolaborasi.'}</p>
-        </div>
-        <div className="workflow-rows">
-          {steps.map((step, i) => (
-            <div key={i}>
-              <span>{String(i + 1).padStart(2, '0')}</span>
-              <h3>{step[0]}</h3>
-              <p>{step[1]}</p>
-              <ArrowUpRight/>
-            </div>
-          ))}
-        </div>
-        <div className="portfolio-note">
-          <strong>{c.portfolio_title || 'Portofolio kolaborasi'}</strong>
-          <p>{c.portfolio_body || 'Ruang untuk kampanye fashion muslim, fashion wanita, tas, fashion anak, dan underwear. Studi kasus serta logo mitra akan ditampilkan setelah mendapat izin brand—belum ada klaim kerja sama yang dipublikasikan.'}</p>
-        </div>
-      </section>
-    </>
-  );
+  return <>
+    <section id="kategori" className="category-section"><span className="eyebrow">{pick('KATEGORI PRODUK KAMI','OUR PRODUCT CATEGORIES')}</span><div className="category-list">{categories.map(([id,en],index)=><Link key={id} to="/layanan"><span className="category-number">{String(index+1).padStart(2,'0')}</span>{pick(id,en)} <ArrowUpRight size={19}/></Link>)}</div></section>
+    <section id="tentang" className="agency-section section-rail"><div><span className="eyebrow">01 / {pick('TENTANG SNBM','ABOUT SNBM')}</span><h2>{pick('Kami paham jualan karena kami juga seller.','We understand selling because we are sellers, too.')}</h2></div><div className="agency-story"><p className="lead">{pick('Menjual produk dan membangun orang yang bisa menjualnya.','Selling products while developing the people who present them.')}</p><p>{pick('SNBM Creator bergerak di penjualan produk fashion dan pengembangan talenta live commerce. Pengalaman sebagai seller membantu kami memahami kebutuhan stok, promo, cara menjelaskan produk, dan ritme sebuah sesi live.','SNBM Creator combines fashion retail with live-commerce talent development. Being sellers ourselves helps us understand stock, promotions, product demonstrations, and the daily pace of live selling.')}</p><p>{pick('Kami membina host in-house untuk kebutuhan penuh waktu, sekaligus membuka ruang bagi host freelance dengan jadwal yang lebih fleksibel. Untuk brand, kami membantu menyusun kebutuhan host dan eksekusi live sesuai ruang lingkup kerja sama.','We develop full-time in-house hosts and work with freelancers on flexible schedules. For brands, we help plan host requirements and live-commerce execution based on an agreed scope.')}</p><Link className="text-link" to="/tentang">{pick('Kenali cara kerja kami','Get to know us')} <ArrowUpRight size={18}/></Link></div></section>
+    <section className="workflow section-rail"><div className="section-heading"><div><span className="eyebrow">02 / {pick('CARA KAMI BEKERJA','HOW WE WORK')}</span><h2>{pick('Lebih dekat dengan produk, lebih siap saat live.','Closer to the product. Better prepared for live.')}</h2></div><p>{pick('Tidak ada paket yang dipaksakan. Kami bahas kebutuhan dan kapasitas tim sebelum mulai.','No one-size-fits-all packages. We discuss what you need and what our team can deliver.')}</p></div><div className="workflow-rows">{steps.map(([title,body],index)=><div key={title}><span>{String(index+1).padStart(2,'0')}</span><h3>{title}</h3><p>{body}</p><ArrowUpRight/></div>)}</div><div className="portfolio-note"><strong>{pick('Lima kategori, satu pendekatan yang dekat dengan produk.','Five categories, one product-first approach.')}</strong><p>{pick('Fashion muslim, fashion wanita, tas wanita, fashion anak, dan underwear. Untuk kerja sama brand, ruang lingkup dan target dibahas terlebih dahulu; kami tidak menampilkan hasil atau klien yang belum terverifikasi.','Modest fashion, women’s wear, bags, kidswear, and underwear. We agree on scope and goals before a project and do not publish unverified client results.')}</p></div></section>
+  </>;
 }

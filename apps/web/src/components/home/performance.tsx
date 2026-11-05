@@ -1,43 +1,6 @@
-import type { RecordModel } from 'pocketbase';
-import { usePocketbaseRecords } from '@/hooks/use-pocketbase-records';
-import { ArrowUpRight, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router';
-
-interface Gmv extends RecordModel { host_name: string; period: string; target: number; achieved: number; source: string; }
-type SiteContent = Record<string, string>;
-
-const money = (n: number) => n.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
-
-export function Performance({ content = {} }: { content?: SiteContent }) {
-  const gmv = usePocketbaseRecords<Gmv>('snbm_gmv', { sort: '-created' });
-  return (
-    <section className="performance section-rail" id="gmv">
-      <div>
-        <span className="eyebrow">{content.performance_eyebrow || '04 / PERFORMA YANG BERARTI'}</span>
-        <h2 style={{ whiteSpace: 'pre-line' }}>{content.performance_title || 'Bukan sekadar live.\nAda arah. Ada target.'}</h2>
-        <p>{content.performance_intro || 'Target dan capaian GMV per host, dengan periode dan sumber yang jelas. Karena angka yang berarti dimulai dari transparansi.'}</p>
-        <Link className="text-link" to="/kontak">{content.performance_cta || 'Diskusikan target brand Anda'} <ArrowUpRight size={18}/></Link>
-      </div>
-      <div className="gmv-panel">
-        <div className="gmv-header"><TrendingUp/><strong>Target & capaian host</strong><span>GMV</span></div>
-        {gmv.isLoading ? <p role="status">Memuat laporan…</p> :
-          gmv.error ? <><p role="alert">Laporan belum dapat dimuat.</p><button onClick={() => void gmv.reload()}>Coba lagi</button></> :
-          gmv.records.length === 0 ? (
-            <div className="gmv-empty">
-              <span>DATA YANG BISA DIPERCAYA.</span>
-              <h3>Angka nyata,<br/>bukan angka rekaan.</h3>
-              <p>Belum ada laporan GMV yang dipublikasikan. Target, capaian, dan periode masing-masing host akan tampil setelah data terverifikasi tersedia.</p>
-            </div>
-          ) : gmv.records.map(record => (
-            <div className="gmv-row" key={record.id}>
-              <strong>{record.host_name}</strong>
-              <small>{record.period} · {record.source || 'Laporan agensi'}</small>
-              <p>{money(record.achieved)} / target {money(record.target)}</p>
-              <progress value={record.achieved} max={Math.max(record.target, record.achieved, 1)}/>
-            </div>
-          ))}
-        <small>GMV adalah nilai bruto transaksi, bukan laba. Hasil kampanye tidak dijamin.</small>
-      </div>
-    </section>
-  );
+import { ArrowUpRight } from 'lucide-react';
+import { useLanguage } from '@/lib/language';
+export function Performance({content:_content}:{content?:Record<string,string>}){
+ const {pick}=useLanguage();return <section className="performance section-rail" id="gmv"><div><span className="eyebrow">04 / {pick('PENGALAMAN SEBAGAI SELLER','SELLER EXPERIENCE')}</span><h2>{pick('Kami tahu apa yang terjadi di balik sesi live.','We know what happens behind a live session.')}</h2><p>{pick('Bagi seller, live shopping bukan cuma soal tampil di kamera. Ada stok, harga, promo, pertanyaan pembeli, dan catatan penjualan yang perlu dipahami bersama.','For sellers, live shopping is more than being on camera. Stock, pricing, promotions, shopper questions, and sales records all matter.')}</p><Link className="text-link" to="/kontak?jenis=brand">{pick('Ceritakan kebutuhan brandmu','Tell us what your brand needs')} <ArrowUpRight size={18}/></Link></div><div className="gmv-panel"><span className="eyebrow">{pick('YANG KAMI PERHATIKAN','WHAT WE PAY ATTENTION TO')}</span><div className="operations-points"><div><strong>01</strong><h3>{pick('Produk yang dipahami','Product understanding')}</h3><p>{pick('Host perlu tahu ukuran, bahan, manfaat, dan batas klaim produk.','Hosts should know sizing, materials, benefits, and product limitations.')}</p></div><div><strong>02</strong><h3>{pick('Interaksi yang relevan','Useful interaction')}</h3><p>{pick('Jawaban yang jujur dan jelas membantu pembeli mengambil keputusan.','Clear, honest answers help shoppers make informed choices.')}</p></div><div><strong>03</strong><h3>{pick('Hasil yang bisa dievaluasi','Results you can review')}</h3><p>{pick('GMV dibaca bersama durasi, promosi, dan konteks penjualan. Angka bukan janji.','GMV is reviewed alongside session length, promotions, and sales context. No guaranteed figures.')}</p></div></div></div></section>;
 }

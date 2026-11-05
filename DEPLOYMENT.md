@@ -21,7 +21,7 @@ In hPanel:
    - Install: `npm install`
    - Build: `npm run build`
    - Start: `npm start` (uses the repository's `server.js` entry point to launch React Router SSR)
-7. Under the **Other** framework preset, set **Entry file** to `server.js`, and **Output directory** to `dist/apps/web` (as found in the Hostinger build artifact). The app needs the repository-root `server.js` and the built `dist/apps/web/server` and `dist/apps/web/client` directories in the deployed Node.js directory.
+7. Under the **Other** framework preset, set **Entry file** to `server.js` (not blank). For this SSR custom entry, leave **Output directory** blank (`none`) so Hostinger keeps the repository-level `server.js` alongside the built `dist/apps/web/` assets. The Node.js server itself serves static assets from `dist/apps/web/client`.
 8. Attach `snbmcreator.com` to this Node.js website and activate HTTPS in hPanel.
 
 The root production `start` command launches only the web app. It intentionally does not start PocketBase. For local development, `npm run dev` still starts both services; `npm run start:stack` is for a self-managed server where both processes are allowed.
@@ -42,13 +42,13 @@ Use a VPS or equivalent server that permits a long-running PocketBase process an
 
 ### Hostinger Node.js website
 
-Set these in the Node.js app's Environment Variables section, not in source code. **Do not set superuser credentials until the external PocketBase server is live and `POCKETBASE_URL` is configured.**
+Set these in the Node.js app's Environment Variables section, not in source code:
 
 - `VITE_POCKETBASE_URL=https://api.snbmcreator.com` — public PocketBase URL. This is a build-time variable; redeploy/rebuild after changing it.
 - `POCKETBASE_URL=https://api.snbmcreator.com` — server-side connection from the website to PocketBase.
 - `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` — server-only PocketBase superuser login used by the website's secure server loaders. Keep these private.
 
-Hostinger normally supplies the web process `PORT`; the entry respects it and falls back to 3000 for local use. `NODE_ENV=production` is suitable for the web app.
+Hostinger normally supplies the web process `PORT`; the start command respects it and falls back to 3000 for local use.
 
 ### PocketBase VPS
 
@@ -73,10 +73,14 @@ Image fields currently accept public image URLs. Direct image upload/storage UI 
 - The repository is currently public. A previous commit contained a demo admin credential in a migration. The current migration code removes that demo account when the new security migration runs, but the old value still exists in Git history. Do not reuse that password; consider making the repository private or cleaning the old history before production.
 - Before accepting real submissions, test login, admin authorization, content updates, host applications, email delivery, CORS, backups, and restore.
 
-## Hostinger runtime debugging
+## 2026 SNBM website update
 
-Hostinger loads `server.js` with `require()` from `lsnode.js`. Avoid top-level `await` in the ESM entry. CI verifies this loading method as well as `/api/health`, public routes and static CSS. A successful build and restart do not prove that the Node.js runtime is healthy: inspect Runtime logs if a 503 occurs.
-
-## Production environment hygiene
-
-Remove `SUPABASE_URL` and `SUPABASE_API_KEY` when using PocketBase only, and rotate previously exposed secrets. `SNBM_ADMIN_EMAIL`, `SNBM_ADMIN_PASSWORD` and `PB_ENCRYPTION_KEY` belong on the external PocketBase server, not the Hostinger website. Never upload `hbuilds/config/.env` to GitHub.
+- The public frontend uses in-house and freelance host categories. Four fashion images are AI-generated illustrative portraits, not real employees or client photographs.
+- Brand and host application forms are separate, and the host form supports CV and live trial video uploads (or a trial video link).
+- `apps/pocketbase/pb_migrations/1793869602_applications_brand_fields.js` adds required application fields and protected file attachments. **Deploy this migration before allowing real form submissions.**
+- `VITE_POCKETBASE_URL` is public browser configuration, not a credential. Hostinger web only: do not store `SNBM_ADMIN_PASSWORD` or `PB_ENCRYPTION_KEY` there.
+- The site publishes truthful, read-only MCP discovery and a basic MCP endpoint at `/mcp`. The proposed server-card format is experimental; only public information is exposed, no authenticated mutation.
+- Do not add fictional phone numbers or social profile URLs to schema. Add verified `telephone`/`sameAs` when the owner supplies them.
+- Production test: `npm run typecheck`, `npm run build`, and `NODE_ENV=production PORT=3000 node -e "require('./server.js')"` then verify `/api/health`.
+- React Router SSR must keep the root `server.js` and the complete built `dist/apps/web/client` and `dist/apps/web/server` directories. Hostinger's Node loader calls `require()`, so no top-level await is permitted in `server.js`.
+- Do not reuse credentials previously exposed in screenshots or archived deployment files. Rotate them before attaching production data.

@@ -5,6 +5,7 @@ import { seo } from '@/lib/seo';
 import { heroImage } from '@/data/content';
 import { pocketbaseAdmin } from '@/lib/pocketbase-client.server';
 import { Hero } from '@/components/home/hero';
+import { HostCampaign } from '@/components/home/host-campaign';
 import { Agency } from '@/components/home/agency';
 import { Hosts } from '@/components/home/hosts';
 import { Performance } from '@/components/home/performance';
@@ -13,9 +14,7 @@ import { Collaborate } from '@/components/home/collaborate';
 
 export async function loader() {
   const content: Record<string, string> = {};
-  // Do not block the public homepage on a local PocketBase port when the
-  // external backend has not been configured. Credentials alone do not
-  // establish a reachable backend.
+  // Avoid holding up public pages with health-check retries before backend env is configured.
   if (process.env.POCKETBASE_URL && process.env.PB_SUPERUSER_EMAIL && process.env.PB_SUPERUSER_PASSWORD) {
     try {
       const result = await pocketbaseAdmin.listRecords<{ key: string; value: string }>('snbm_content', { perPage: 200 });
@@ -30,12 +29,14 @@ export async function loader() {
 
 export function meta({ matches, location }: Route.MetaArgs) {
   return seo({ matches, location }, {
-    title: 'SNBM Creator — Host yang Tepat, Brand Makin Hebat',
-    description: 'Agensi host live shopping di Jakarta Barat. Hubungkan brand fashion Anda dengan host reguler dan big size, hijab maupun nonhijab, bersama SNBM Creator.',
+    title: 'SNBM Creator | Fashion Seller & Live Commerce Agency',
+    description: 'SNBM Creator adalah seller produk fashion sekaligus agensi pengembangan host in-house full time dan freelance untuk live shopping.',
     image: heroImage,
     jsonLd: [
-      { '@context': 'https://schema.org', '@type': 'WebSite', name: 'SNBM Creator' },
-      { '@context': 'https://schema.org', '@type': 'Organization', name: 'SNBM Creator', description: 'Agensi host creator live shopping berbasis di Jakarta Barat.' },
+      { '@context': 'https://schema.org', '@type': 'WebSite', name: 'SNBM Creator', url:'https://snbmcreator.com/', inLanguage:['id-ID','en-US'] },
+      { '@context': 'https://schema.org', '@type': 'Organization', '@id':'https://snbmcreator.com/#organization', name:'SNBM Creator', url:'https://snbmcreator.com/', email:'contact@snbmcreator.com',logo:'https://snbmcreator.com/assets/snbm/logo.png',address:{'@type':'PostalAddress',addressLocality:'Jakarta Barat',addressRegion:'DKI Jakarta',addressCountry:'ID'},description:'Seller fashion dan agensi pengembangan host live commerce in-house serta freelance.' },
+      { '@context': 'https://schema.org', '@type': 'Service', serviceType:'Live commerce host development', name:'Pengembangan host live shopping',provider:{'@id':'https://snbmcreator.com/#organization'},areaServed:{'@type':'Country',name:'Indonesia'} },
+      { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity:[{'@type':'Question',name:'Apa bidang usaha SNBM Creator?',acceptedAnswer:{'@type':'Answer',text:'SNBM Creator adalah seller produk fashion sekaligus agensi pengembangan host live shopping.'}},{'@type':'Question',name:'Apakah menerima host full time dan freelance?',acceptedAnswer:{'@type':'Answer',text:'Pendaftaran tersedia untuk host in-house full time dan freelance part time melalui snbmcreator.com/gabung-host.'}},{'@type':'Question',name:'Bagaimana menghubungi SNBM Creator?',acceptedAnswer:{'@type':'Answer',text:'Email contact@snbmcreator.com atau gunakan formulir kontak di snbmcreator.com/kontak.'}}] },
     ],
   });
 }
@@ -55,6 +56,7 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
     <main style={themeStyle}>
       <Hero content={content} />
       <Agency content={content} />
+      <HostCampaign />
       <Hosts content={content} />
       <Performance content={content} />
       <Insights />

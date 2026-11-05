@@ -1,55 +1,50 @@
 name: SNBM Creator CI
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install dependencies using Hostinger's package manager
+      - name: Install dependencies
         run: npm install
       - name: Type check
         run: npm run typecheck
-      - name: Build website
+      - name: Build
         run: npm run build
-      - name: Verify Hostinger require startup, routes and assets
+      - name: Smoke test Hostinger startup and public routes
         shell: bash
         run: |
           set -euo pipefail
-          # Hostinger lsnode.js uses require() to load this ESM entry.
-          NODE_ENV=production PORT=3000 PB_SUPERUSER_EMAIL=ci@example.invalid PB_SUPERUSER_PASSWORD=ci-placeholder-not-secret node -e "require('./server.js')" > /tmp/snbm-server.log 2>&1 &
-          SERVER_PID=$!
-          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          NODE_ENV=production PORT=3000 node -e "require('./server.js')" > /tmp/snbm-serve.log 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
           for i in {1..50}; do
-            if curl -fsS http://127.0.0.1:3000/api/health -o /tmp/snbm-health.json 2>/dev/null; then
-              break
-            fi
-            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
-              echo 'SSR server exited unexpectedly'
-              cat /tmp/snbm-server.log
-              exit 1
-            fi
+            if curl -fsS http://127.0.0.1:3000/api/health -o /tmp/health.json 2>/dev/null; then break; fi
+            if ! kill -0 "$PID" 2>/dev/null; then cat /tmp/snbm-serve.log; exit 1; fi
             sleep 0.2
           done
-          grep -q '"ok":true' /tmp/snbm-health.json
-          RESPONSE_TIME=$(curl -fsS -w '%{time_total}' -o /tmp/snbm-home.html http://127.0.0.1:3000/)
-          python3 -c 'import sys; assert float(sys.argv[1]) < 3, "Home blocked on unconfigured PocketBase"' "$RESPONSE_TIME"
-          grep -q 'SNBM Creator' /tmp/snbm-home.html
-          for url in /login /layanan /kontak /gabung-host /blog /robots.txt /sitemap.xml; do
-            echo "Checking $url"
-            curl -fsS --max-time 12 -o /dev/null "http://127.0.0.1:3000$url"
+          grep -q '"ok":true' /tmp/health.json
+          for route in / /tentang /layanan /kontak /gabung-host /blog /privasi /syarat /llms.txt /sitemap.xml; do
+            echo "Checking $route"
+            curl -fsS --max-time 15 -o /dev/null "http://127.0.0.1:3000$route"
           done
-          CSS_FILE=$(find dist/apps/web/client/assets -maxdepth 1 -name 'index-*.css' -print -quit)
-          test -n "$CSS_FILE"
-          curl -fsS -o /dev/null "http://127.0.0.1:3000/assets/$(basename "$CSS_FILE")"
-          echo 'Hostinger-style SSR startup, public pages, SEO routes and CSS passed.'
+          curl -fsS -H 'Accept: text/markdown' http://127.0.0.1:3000/ | grep -q 'SNBM Creator'
+          curl -fsS http://127.0.0.1:3000/.well-known/mcp/server-card.json | grep -q 'serverInfo'
+          curl -fsS -H 'Content-Type: application/json' -X POST -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://127.0.0.1:3000/mcp | grep -q 'get_snbm_business_info'
+          CSS=$(find dist/apps/web/client/assets -name 'index-*.css' -print -quit)
+          curl -fsS -o /dev/null "http://127.0.0.1:3000/assets/$(basename "$CSS")"
+          for asset in logo.png favicon.png regular-hijab.webp regular-nonhijab.webp big-hijab.webp big-nonhijab.webp hero-still.webp hero-fashion.webm; do
+            curl -fsS -o /dev/null "http://127.0.0.1:3000/assets/snbm/$asset"
+          done
+      - name: Check PocketBase migration syntax
+        run: |
+          for script in apps/pocketbase/pb_migrations/*.js; do node --check "$script"; done

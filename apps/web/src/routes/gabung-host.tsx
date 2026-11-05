@@ -1,27 +1,6 @@
 import type { Route } from './+types/gabung-host';
 import { seo } from '@/lib/seo';
-import { heroImage } from '@/data/content';
 import { HostJoinForm } from '@/components/host-join-form';
-
-export function meta({ matches, location }: Route.MetaArgs) {
-	return seo({ matches, location }, {
-		title: 'Gabung Jadi Host — SNBM Creator',
-		description: 'Daftar sebagai host full time atau freelance untuk live shopping fashion. Reguler 55–65 kg dan big size 75–100 kg, hijab maupun nonhijab, bersama SNBM Creator.',
-		image: heroImage,
-	});
-}
-
-export default function GabungHost() {
-	return (
-		<main className="page-rail contact-page">
-			<div>
-				<span className="eyebrow">GABUNG TIM HOST SNBM</span>
-				<h1>Jadi host.<br/>Tampil <span>full time</span> atau freelance.</h1>
-				<p className="page-intro">Punya energi di depan kamera? Bergabunglah sebagai host creator untuk live shopping fashion. Pilih status full time atau freelance, sesuaikan dengan kategori dan gaya Anda.</p>
-				<p>Kategori kami: <strong>fashion muslim, fashion wanita, tas wanita, fashion anak, underwear.</strong></p>
-				<p className="subtle">Pendaftaran ditinjau tim SNBM Creator. Data Anda tidak ditampilkan ke publik.</p>
-			</div>
-			<HostJoinForm />
-		</main>
-	);
-}
+import { useLanguage } from '@/lib/language';
+export function meta({matches,location}:Route.MetaArgs){return seo({matches,location},{title:'Daftar Host Live Shopping | SNBM Creator',description:'Pendaftaran host live shopping SNBM Creator untuk posisi in-house full time atau freelance part time. Kirim pengalaman, GMV, CV, dan video trial.'});}
+export default function GabungHost(){const {pick}=useLanguage();return <main className="page-rail contact-page"><div><span className="eyebrow">{pick('BERGABUNG DENGAN SNBM','JOIN SNBM')}</span><h1>{pick('Jadi host bersama kami.','Host with us.')}</h1><p className="page-intro">{pick('Kami membuka kesempatan untuk host in-house full time dan freelance part time. Kalau kamu terbiasa menjelaskan produk, menjaga interaksi, dan memahami alur live shopping, kami ingin melihat pengalamanmu.','We welcome full-time in-house and part-time freelance live-shopping hosts. If you know how to present products, engage viewers, and manage live sessions, we would love to review your work.')}</p><p>{pick('Lengkapi pengalaman, jam live, GMV terbaik, CV, serta contoh video saat menjadi host.','Share your experience, live hours, highest daily GMV, CV, and a sample hosting video.')}</p><p className="subtle">{pick('Pengiriman formulir memerlukan server pendaftaran yang aktif. Jangan mengirim data sensitif tambahan yang tidak diminta.','Submitting the form requires an active application backend. Do not upload unrelated sensitive documents.')}</p></div><HostJoinForm/></main>}
