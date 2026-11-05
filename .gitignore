@@ -1,0 +1,13 @@
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+
+# PocketBase local database and uploaded data
+apps/pocketbase/pb_data/

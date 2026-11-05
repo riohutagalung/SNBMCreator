@@ -1,0 +1,6 @@
+import { useCookieBanner } from '@/hooks/use-cookie-banner';
+export function CookieBanner() {
+ const b = useCookieBanner();
+ if(!b.isOpen) return null;
+ return <section className="cookie-banner" role="dialog" aria-label="Preferensi cookie"><strong>Anda yang pegang kendali.</strong><p>Cookie wajib menjalankan situs. Cookie opsional hanya digunakan dengan izin Anda.</p>{b.isCustomizing && <fieldset>{([{key:'analytics',title:'Analitik situs',text:'Statistik kunjungan situs.'},{key:'marketing',title:'Pemasaran',text:'Pengukuran dan personalisasi iklan.'},{key:'platformAnalytics',title:'Analitik platform',text:'Hostinger menggunakan Amplitude untuk meningkatkan situs dan checkout tanpa mengidentifikasi Anda secara langsung.'}] as const).map(c=><label className="check-label" key={c.key}><input type="checkbox" checked={b.choices[c.key]} onChange={e=>b.setChoice(c.key,e.target.checked)}/><span>{c.title} — {c.text}</span></label>)}</fieldset>}<div className="cookie-actions"><button onClick={b.rejectOptional}>Tolak opsional</button><button onClick={b.isCustomizing?b.saveChoices:b.customize}>{b.isCustomizing?'Simpan pilihan':'Atur pilihan'}</button><button onClick={b.acceptAll}>Terima semua</button></div></section>;
+}

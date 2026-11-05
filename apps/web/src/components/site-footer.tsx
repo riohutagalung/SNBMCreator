@@ -1,0 +1,8 @@
+import { Link } from 'react-router';
+import { openCookiePreferences } from '@/lib/cookie-consent';
+import { pocketbaseClient } from '@/lib/pocketbase-client';
+import { useFormSubmission } from '@/hooks/use-form-submission';
+export function SiteFooter() {
+ const form = useFormSubmission({submit:(_v,data)=>pocketbaseClient.collection('snbm_contacts').create(data)});
+ return <footer className="site-footer"><div><Link className="brand" to="/">SNBM<span>CREATOR®</span></Link><p>Dari koneksi, jadi konversi.<br/>Jakarta Barat, Indonesia.</p></div><div><h3>Tetap selangkah di depan.</h3><p>Daftar untuk kabar dan insight live shopping.</p><form onSubmit={form.onSubmit}><input {...form.honeypotProps}/><label className="sr-only" htmlFor="newsletter">Alamat email</label><div className="newsletter"><input id="newsletter" name="email" type="email" required placeholder="Email Anda"/><button disabled={form.isSubmitting}>{form.isSubmitting ? 'Mengirim…' : 'Daftar →'}</button></div><label className="check-label"><input type="checkbox" name="consent" value="true" required/> Saya setuju menerima kabar SNBM Creator.</label>{form.isSuccess && <p role="status">Terima kasih! Email Anda telah terdaftar.</p>}{form.isError && <p role="alert">Pendaftaran gagal. Periksa email dan coba lagi.</p>}</form></div><div className="footer-links"><Link to="/layanan">Pesan layanan</Link><Link to="/gabung-host">Daftar sebagai host</Link><a href="/#gmv">Target & GMV</a><button onClick={openCookiePreferences}>Pengaturan cookie</button></div><div className="footer-bottom"><span>© 2026 SNBM Creator</span><span>HADIR DI MOMENNYA. CIPTAKAN DAMPAKNYA.</span></div></footer>;
+}

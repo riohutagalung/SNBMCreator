@@ -1,0 +1,10 @@
+import type { RecordModel } from 'pocketbase';
+import { usePocketbaseRecords } from '@/hooks/use-pocketbase-records';
+import { ArrowUpRight, TrendingUp } from 'lucide-react';
+import { Link } from 'react-router';
+interface Gmv extends RecordModel {host_name:string;period:string;target:number;achieved:number;source:string}
+const money=(n:number)=>n.toLocaleString('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0});
+export function Performance() {
+ const gmv=usePocketbaseRecords<Gmv>('snbm_gmv',{sort:'-created'});
+ return <section className="performance section-rail" id="gmv"><div><span className="eyebrow">04 / PERFORMA YANG BERARTI</span><h2>Bukan sekadar live.<br/>Ada arah. Ada target.</h2><p>Target dan capaian GMV per host, dengan periode dan sumber yang jelas. Karena angka yang berarti dimulai dari transparansi.</p><Link className="text-link" to="/kontak">Diskusikan target brand Anda <ArrowUpRight size={18}/></Link></div><div className="gmv-panel"><div className="gmv-header"><TrendingUp/><strong>Target & capaian host</strong><span>GMV</span></div>{gmv.isLoading?<p role="status">Memuat laporan…</p>:gmv.error?<><p role="alert">Laporan belum dapat dimuat.</p><button onClick={()=>void gmv.reload()}>Coba lagi</button></>:gmv.records.length===0?<div className="gmv-empty"><span>DATA YANG BISA DIPERCAYA.</span><h3>Angka nyata,<br/>bukan angka rekaan.</h3><p>Belum ada laporan GMV yang dipublikasikan. Target, capaian, dan periode masing-masing host akan tampil setelah data terverifikasi tersedia.</p></div>:gmv.records.map(r=><div className="gmv-row" key={r.id}><strong>{r.host_name}</strong><small>{r.period} · {r.source||'Laporan agensi'}</small><p>{money(r.achieved)} / target {money(r.target)}</p><progress value={r.achieved} max={Math.max(r.target,r.achieved,1)}/></div>)}<small>GMV adalah nilai bruto transaksi, bukan laba. Hasil kampanye tidak dijamin.</small></div></section>;
+}

@@ -1,0 +1,11 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
+import { type Product, trackEcommerceEvent, EcommerceTrackingEvent } from '@/api/ecommerce-api';
+import { useProductOptions } from '@/hooks/use-product-options';
+import { useCart, cartLineFromVariant } from '@/hooks/use-ecommerce-cart';
+import { BookingSlotPicker } from '@/components/booking-slot-picker';
+export function ProductDetail({product}:{product:Product}) {
+ const picker=useProductOptions(product); const cart=useCart();const [added,setAdded]=useState(false);const variant=picker.variant;
+ useEffect(()=>{if(variant)trackEcommerceEvent({event:EcommerceTrackingEvent.ViewItem,items:[{product,variant,quantity:1}]});},[product,variant]);
+ return <main className="page-rail detail-page"><Link className="text-link" to="/layanan">← Semua layanan</Link><span className="eyebrow">SNBM CREATOR / LAYANAN</span><h1>{product.title}</h1><p className="page-intro">{product.description.replace(/<[^>]*>/g,'')}</p><strong className="product-price">{variant?.sale_price_formatted||variant?.price_formatted||product.price_formatted}</strong><p className="notice">Paket dan harga contoh. Konfirmasikan kebutuhan kampanye serta ketersediaan host dengan agensi.</p>{product.options.map(o=><label key={o.id}>{o.title}<select value={picker.selection[o.id]||''} onChange={e=>picker.select(o.id,e.target.value)}><option value="" disabled>Pilih opsi</option>{o.values.map(v=><option key={v.id} value={v.value} disabled={!picker.isValueAvailable(o.id,v.value)}>{v.value}</option>)}</select></label>)}{product.type.value==='booking'&&variant?<BookingSlotPicker product={product} variant={variant}/>:<div className="purchase-block"><button className="button" disabled={!product.purchasable||!picker.canAddToCart||cart.isLoading} onClick={()=>{if(variant){cart.addLine(cartLineFromVariant({product,variant}));setAdded(true);}}}>{!product.purchasable||!picker.isInStock?'Layanan belum tersedia':added?'Ditambahkan ke keranjang ✓':'Tambahkan ke keranjang →'}</button>{added&&<Link className="text-link" to="/cart">Lihat keranjang & lanjutkan pemesanan →</Link>}</div>}<Link to="/kontak" className="text-link">Ada kebutuhan khusus? Hubungi kami →</Link></main>;
+}

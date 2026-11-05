@@ -1,0 +1,5 @@
+import { Link } from 'react-router';
+import { ArrowUpRight } from 'lucide-react';
+export function Collaborate() {
+ return <section className="collaborate section-rail"><span className="eyebrow">LIVE BERIKUTNYA DIMULAI DARI ANDA.</span><h2>Siap jadi<br/><span>pusat perhatian?</span></h2><div><Link className="button light" to="/layanan">Saya pemilik brand <ArrowUpRight size={20}/></Link><Link className="button outline-light" to="/kontak?jenis=host">Saya ingin jadi host <ArrowUpRight size={20}/></Link></div><div className="platforms"><span>LAYANAN LIVE UNTUK</span><strong>TikTok Live</strong><strong>Shopee Live</strong><strong>Instagram Live</strong></div><p className="platform-note">Integrasi data otomatis belum aktif. Akses API dan izin akun dari masing-masing platform diperlukan; laporan saat ini dikelola oleh agensi.</p></section>;
+}
