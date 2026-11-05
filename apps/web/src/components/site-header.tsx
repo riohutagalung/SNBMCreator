@@ -5,12 +5,12 @@ import { useLanguage } from '@/lib/language';
 export function SiteHeader() {
   const { language, setLanguage, pick } = useLanguage();
   return <header className="site-header refreshed-header">
-    <Link className="brand brand-image" to="/" aria-label="SNBM Creator, beranda"><img src="/assets/snbm/logo.png" alt="SNBM Creator" width="165" height="90" /></Link>
+    <Link className="brand" to="/" aria-label="SNBM Creator, beranda">SNBM<span>CREATOR®</span></Link>
     <nav aria-label={pick('Navigasi utama', 'Main navigation')}>
       <NavLink to="/" end>{pick('Beranda','Home')}</NavLink>
       <NavLink to="/tentang">{pick('Tentang kami','About')}</NavLink>
       <NavLink to="/layanan">{pick('Layanan','Services')}</NavLink>
-      <a href="/#host">{pick('Pilihan host','Host profiles')}</a>
+      <NavLink to="/pilihan-host">{pick('Pilihan host','Host profiles')}</NavLink>
       <NavLink to="/blog">{pick('Artikel','Insights')}</NavLink>
     </nav>
     <div className="header-actions">

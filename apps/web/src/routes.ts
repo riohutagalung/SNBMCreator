@@ -4,6 +4,7 @@ export default [
 	index('routes/home.tsx'),
  route('layanan', 'routes/layanan.tsx'),
  route('tentang', 'routes/tentang.tsx'),
+ route('pilihan-host', 'routes/pilihan-host.tsx'),
  route('privasi', 'routes/privasi.tsx'),
  route('syarat', 'routes/syarat.tsx'),
  route('product/:handle', 'routes/product.$handle.tsx'),

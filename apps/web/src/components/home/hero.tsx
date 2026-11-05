@@ -19,7 +19,6 @@ export function Hero({ content: _content }: { content?: Record<string, string> }
       <div className="image-overlay"/>
       <div className="live-label"><Radio size={16}/> {pick('LIVE SHOPPING FASHION','FASHION LIVE SHOPPING')}</div>
       <div className="media-caption">{pick('Fashion wanita, muslim, tas, anak,','Women’s wear, modest fashion, bags, kidswear,')}<br/><strong>{pick('dan underwear.','and underwear.')}</strong></div>
-      <span className="photo-note">{pick('VISUAL AI / ILUSTRASI','AI-GENERATED VISUAL')}</span>
     </div>
     <div className="hero-bottom"><span>{pick('PRODUK. TALENTA. PENJUALAN.','PRODUCTS. PEOPLE. COMMERCE.')}</span><a href="#kategori">{pick('Lihat kategori','Explore categories')} <ArrowDown size={16}/></a></div>
   </section>;

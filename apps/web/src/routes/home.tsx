@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react';
-import { data } from 'react-router';
+import { useEffect, type CSSProperties } from 'react';
+import { data, useNavigate } from 'react-router';
 import type { Route } from './+types/home';
 import { seo } from '@/lib/seo';
 import { heroImage } from '@/data/content';
@@ -45,6 +45,11 @@ const validHex = (value: string | undefined, fallback: string) =>
   value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
 
 export default function HomePage({ loaderData }: Route.ComponentProps) {
+  const navigate = useNavigate();
+  useEffect(() => {
+    // Previously shared /#host links should open the dedicated host page.
+    if (window.location.hash === '#host') navigate('/pilihan-host', { replace: true });
+  }, [navigate]);
   const content = loaderData.content;
   const themeStyle = {
     '--blue': validHex(content.theme_primary, '#2456ff'),
