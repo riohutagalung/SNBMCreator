@@ -12,13 +12,34 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+          node-version: '22'
+      - name: Install dependencies using Hostinger's package manager
+        run: npm install
       - name: Type check
-        run: bun run typecheck
+        run: npm run typecheck
       - name: Build website
-        run: bun run build
+        run: npm run build
+      - name: Verify SSR server starts and handles requests
+        shell: bash
+        run: |
+          NODE_ENV=production PORT=3000 node server.js > /tmp/snbm-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in {1..25}; do
+            if curl -fsS http://127.0.0.1:3000/api/health; then
+              echo
+              exit 0
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              echo 'SSR server exited unexpectedly'
+              cat /tmp/snbm-server.log
+              exit 1
+            fi
+            sleep 1
+          done
+          echo 'SSR server did not become healthy'
+          cat /tmp/snbm-server.log
+          exit 1
