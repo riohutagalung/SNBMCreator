@@ -21,7 +21,7 @@ In hPanel:
    - Install: `npm install`
    - Build: `npm run build`
    - Start: `npm start` (uses the repository's `server.js` entry point to launch React Router SSR)
-7. Under the **Other** framework preset, set **Entry file** to `server.js` (not blank); keep **Output directory** as `dist/apps/web`.
+7. Under the **Other** framework preset, set **Entry file** to `server.js` (not blank). For this SSR custom entry, leave **Output directory** blank (`none`) so Hostinger keeps the repository-level `server.js` alongside the built `dist/apps/web/` assets. The Node.js server itself serves static assets from `dist/apps/web/client`.
 8. Attach `snbmcreator.com` to this Node.js website and activate HTTPS in hPanel.
 
 The root production `start` command launches only the web app. It intentionally does not start PocketBase. For local development, `npm run dev` still starts both services; `npm run start:stack` is for a self-managed server where both processes are allowed.
