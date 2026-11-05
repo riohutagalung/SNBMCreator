@@ -60,8 +60,8 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
   return (
     <main style={themeStyle}>
       <Hero content={content} />
-      <Agency content={content} />
       <HostCampaign />
+      <Agency content={content} />
       <Hosts content={content} />
       <Performance content={content} />
       <Insights />

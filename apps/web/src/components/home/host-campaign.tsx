@@ -1,4 +1,18 @@
 import { Link } from 'react-router';
 import { ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '@/lib/language';
-export function HostCampaign(){const {pick}=useLanguage();return <section className="host-campaign section-rail"><div className="campaign-copy"><span className="eyebrow">{pick('OPEN RECRUITMENT · HOST LIVE','HOST LIVE OPPORTUNITIES')}</span><h2>{pick('Punya pengalaman live? Kami ingin mengenalmu.','Already hosting live? We’d like to meet you.')}</h2><p>{pick('Kami membuka pendaftaran host in-house full time dan host freelance part time. Ceritakan pengalamanmu, jam live yang biasa kamu jalani, dan tunjukkan contoh sesi terbaikmu.','We welcome applications from full-time in-house hosts and part-time freelancers. Tell us about your experience, typical live hours, and share your best sample session.')}</p><Link to="/gabung-host" className="button light">{pick('Daftar sebagai host','Apply to become a host')} <ArrowUpRight size={20}/></Link></div><div className="campaign-photo"><img src="/assets/snbm/regular-hijab.webp" alt={pick('Ilustrasi model berhijab untuk kampanye rekrutmen host','Illustrative modest-fashion model for host recruitment')} width="420" height="560" loading="lazy"/><span>{pick('FULL TIME & FREELANCE','FULL-TIME & FREELANCE')}</span></div></section>}
+
+export function HostCampaign() {
+  const { pick } = useLanguage();
+  return <section className="host-campaign section-rail snbm-recruitment" aria-labelledby="recruitment-title">
+    <div className="campaign-photo">
+      <img src="/assets/snbm/host-campaign.webp?v=4k3" alt={pick('Ilustrasi empat gaya host fashion: reguler dan big size, hijab dan nonhijab','Fashion host categories: regular and plus size, hijab and non-hijab')} width="3840" height="2160" loading="lazy"/>
+    </div>
+    <div className="campaign-copy">
+      <span className="eyebrow">OPEN RECRUITMENT</span>
+      <h2 id="recruitment-title">{pick('Jadi host live bersama SNBM Creator.','Join the SNBM Creator host team.')}</h2>
+      <p>{pick('Kami membuka kesempatan untuk host in-house full time dan freelance part time. Ceritakan pengalamanmu dan kirim contoh video saat live.','We welcome full-time in-house hosts and part-time freelancers. Tell us about your experience and submit a live-hosting sample.')}</p>
+      <Link to="/gabung-host" className="button light">{pick('Daftar sekarang','Apply now')} <ArrowUpRight size={19}/></Link>
+    </div>
+  </section>;
+}
