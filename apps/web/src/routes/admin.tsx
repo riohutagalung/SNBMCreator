@@ -203,6 +203,11 @@ function ContentEditor({ row, onSave }: { row: ContentRow; onSave: (value: strin
       <div className="admin-card-head"><strong>{row.label || row.key}</strong><span className="admin-tag">{row.type}</span></div>
       {row.type === 'textarea' ? (
         <textarea value={value} onChange={e => setValue(e.target.value)} rows={4} />
+      ) : row.type === 'color' ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <input aria-label={row.label} type="color" value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : '#2456ff'} onChange={e => setValue(e.target.value)} style={{ width: 64, height: 42, padding: 3 }} />
+          <code>{value}</code>
+        </div>
       ) : (
         <input value={value} onChange={e => setValue(e.target.value)} />
       )}
