@@ -1,46 +1,73 @@
-# SNBM Creator — deployment
+# SNBM Creator — Hostinger Unlimited + PocketBase backend
 
-## Architecture
+## Recommended architecture
 
-- Website: React Router SSR / Node.js, in apps/web.
-- API and database: PocketBase, in apps/pocketbase.
-- PocketBase requires persistent disk storage. Its production data directory is /data; an ephemeral container filesystem is not suitable.
-- Recommended public hosts: snbmcreator.com for the website and api.snbmcreator.com for PocketBase.
+- Public website: Hostinger **Unlimited Web Hosting**, using its managed Node.js Web App feature. The website is the React Router SSR application in `apps/web`.
+- Database and API: PocketBase on a separate VPS or another host that supports a continuously running Go server, custom ports, and persistent disk storage.
+- Public hosts: `https://snbmcreator.com` for the website and `https://api.snbmcreator.com` for PocketBase.
+
+Hostinger's Unlimited plan supports managed Node.js Web Apps. Its shared Node.js environment does not support extra services/custom listening ports or always-running background workers, so do not try to run PocketBase as a second process inside the shared web hosting plan.
+
+## Deploy the website to Hostinger Unlimited
+
+In hPanel:
+
+1. Open **Websites → Add Website → Deploy Web App**.
+2. Choose **Import Git Repository** and authorize GitHub.
+3. Select `riohutagalung/SNBMCreator`, branch `main`.
+4. Use the repository root as the project root (the root `package.json` is a workspace monorepo).
+5. Select a supported Node.js runtime, preferably Node.js 22.x or 24.x.
+6. Use npm, not Bun. The root scripts are prepared for Hostinger:
+   - Install: `npm install`
+   - Build: `npm run build`
+   - Start: `npm start`
+7. Attach `snbmcreator.com` to this Node.js website and activate HTTPS in hPanel.
+
+The root production `start` command launches only the web app. It intentionally does not start PocketBase. For local development, `npm run dev` still starts both services; `npm run start:stack` is for a self-managed server where both processes are allowed.
+
+## Deploy PocketBase separately
+
+Use a VPS or equivalent server that permits a long-running PocketBase process and persistent storage. A static hosting slot or shared Node.js web app slot is not enough.
+
+1. Provision a persistent disk and mount it at `/data`.
+2. Deploy the repository's `apps/pocketbase` directory and its `pb_hooks` and `pb_migrations`.
+3. Set the PocketBase secrets below before the first start. The existing superuser migration and SNBM admin bootstrap migration read these environment variables.
+4. Start PocketBase with its package start command. Keep port 8090 reachable only through the reverse proxy/firewall.
+5. Point DNS record `api` (A record) for `api.snbmcreator.com` to the VPS public IP.
+6. Configure HTTPS reverse proxy from `api.snbmcreator.com` to PocketBase on port 8090.
+7. Configure PocketBase allowed origins/CORS to include `https://snbmcreator.com` and `https://www.snbmcreator.com` if the www host is used.
 
 ## Environment variables
 
-Configure these in the hosting provider's secret/environment settings. Do not commit real values or send credentials in chat.
+### Hostinger Node.js website
 
-- PORT: public Node.js web process port, typically supplied by the hosting platform.
-- VITE_POCKETBASE_URL: browser-accessible PocketBase HTTPS URL, for example https://api.snbmcreator.com.
-- POCKETBASE_URL: server-to-server PocketBase address, normally http://127.0.0.1:8090 when both services share one VPS.
-- PB_SUPERUSER_EMAIL and PB_SUPERUSER_PASSWORD: private PocketBase superuser credentials used by server-side website loaders/actions.
-- SNBM_ADMIN_EMAIL and SNBM_ADMIN_PASSWORD: website admin account provisioned in the users collection by a PocketBase migration. Use a different password from the superuser.
-- PB_ENCRYPTION_KEY: stable secret used by PocketBase encryption. Store it securely and keep the same value across restarts/restores.
+Set these in the Node.js app's Environment Variables section, not in source code:
 
-Copy .env.example as a reference only. Put actual values in the hosting provider's environment configuration.
+- `VITE_POCKETBASE_URL=https://api.snbmcreator.com` — public PocketBase URL. This is a build-time variable; redeploy/rebuild after changing it.
+- `POCKETBASE_URL=https://api.snbmcreator.com` — server-side connection from the website to PocketBase.
+- `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` — server-only PocketBase superuser login used by the website's secure server loaders. Keep these private.
 
-## First deployment
+Hostinger normally supplies the web process `PORT`; the start command respects it and falls back to 3000 for local use.
 
-1. Choose a persistent Node.js/VPS environment that can run both a Node.js SSR process and PocketBase continuously. A static-only hosting plan cannot run this backend.
-2. Create persistent storage for PocketBase and mount it at /data.
-3. Set all required environment variables before starting PocketBase. Existing PocketBase migrations and the new SNBM admin bootstrap migration read those variables.
-4. Start PocketBase using the apps/pocketbase start script with its data directory mapped to /data.
-5. Build and start the website using apps/web build and apps/web start scripts.
-6. Put a reverse proxy in front: snbmcreator.com to the Node.js web process; api.snbmcreator.com to PocketBase port 8090. Enable HTTPS on both hosts.
-7. Set VITE_POCKETBASE_URL to https://api.snbmcreator.com and rebuild the frontend after changing that build-time variable.
+### PocketBase VPS
 
-## Admin and content
+Set these in the PocketBase service environment:
 
-- Sign in at /login. The /admin page requires a signed-in user whose PocketBase users.role is admin.
-- The Konten & tampilan tab stores landing-page content in snbm_content.
-- Text, paragraphs, category lists, host profile names/details/image URLs, section copy, CTA labels, and three theme colors are editable.
-- Public landing-page sections use defaults if the PocketBase content has not loaded.
-- Host applicant statuses are managed in the same dashboard.
+- `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` — used by the existing PocketBase superuser migration. Use a unique, strong password.
+- `SNBM_ADMIN_EMAIL` and `SNBM_ADMIN_PASSWORD` — website admin account provisioned in the `users` collection by the secure SNBM admin migration. Use a different password from the superuser and at least 14 characters.
+- `PB_ENCRYPTION_KEY` — long random encryption key. Keep it persistent; do not rotate casually.
 
-## Security notes
+The website admin signs in at `/login`; the dashboard is at `/admin`. The admin email/password are not the PocketBase superuser credentials.
 
-- A legacy starter migration contained a publicly-known demo credential. The secure-admin migration removes the legacy demo account and provisions the account specified by SNBM_ADMIN_EMAIL and SNBM_ADMIN_PASSWORD. This migration must run before public launch.
-- Rotate the legacy demo password anywhere it may have been reused.
-- Never expose PB_SUPERUSER_EMAIL or PB_SUPERUSER_PASSWORD via VITE_ variables or browser code.
-- Keep PocketBase data and backups persistent. Configure scheduled off-site backups, SMTP, reverse-proxy headers, and firewall rules before accepting real submissions.
+## What the admin can edit
+
+The `Konten & tampilan` tab stores content in PocketBase collection `snbm_content`: hero copy, category list, about copy, workflow steps, host-card text and image URLs, performance/CTA copy, and three theme colors. Host applications and enquiries are also managed in the dashboard.
+
+Image fields currently accept public image URLs. Direct image upload/storage UI is not implemented yet.
+
+## Backups and production safety
+
+- Hostinger's daily backup covers the website within that hosting plan. It does **not** automatically back up the separate PocketBase VPS. Configure independent scheduled PocketBase backups of `/data` to off-server storage and test restore.
+- Do not expose `PB_SUPERUSER_EMAIL`, `PB_SUPERUSER_PASSWORD`, `SNBM_ADMIN_PASSWORD`, or `PB_ENCRYPTION_KEY` in browser variables or Git.
+- The repository is currently public. A previous commit contained a demo admin credential in a migration. The current migration code removes that demo account when the new security migration runs, but the old value still exists in Git history. Do not reuse that password; consider making the repository private or cleaning the old history before production.
+- Before accepting real submissions, test login, admin authorization, content updates, host applications, email delivery, CORS, backups, and restore.
