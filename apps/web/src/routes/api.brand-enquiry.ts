@@ -1,6 +1,7 @@
 import { apiError, json, readFormData, withApi } from '@/lib/api.server';
 import { clientIdentifier, createRateLimiter } from '@/lib/rate-limit.server';
 import { getBackend, sameOrigin, text, validEmail, validHttps } from '@/lib/snbm-submission.server';
+import { mirrorSavedRecord } from '@/lib/snbm-sheets.server';
 
 const allowBrand=createRateLimiter({maxRequests:5,windowSeconds:3600});
 export const action=withApi(async({request})=>{
@@ -20,11 +21,12 @@ export const action=withApi(async({request})=>{
  if(text(form,'consent')!=='true'||name.length<2||name.length>120
    ||!validEmail(email)||message.length<5||message.length>3000
    ||phone.length>30||(url&&!validHttps(url)))return apiError(400,'Formulir belum lengkap.');
- const {error}=await db.from('snbm_enquiries').insert({
+ const {data:saved,error}=await db.from('snbm_enquiries').insert({
   name,email,phone,kind:'Brand',brand_name:text(form,'brand_name',160),
   product_category:text(form,'product_category',60),platform:text(form,'platform',60),
   store_url:url,message,consent_at:new Date().toISOString()
- });
- if(error)return apiError(503,'Data belum berhasil disimpan.');
- return json({ok:true},{status:201});
+ }).select('*').single();
+ if(error || !saved)return apiError(503,'Data belum berhasil disimpan.');
+ const sheetsSynced=await mirrorSavedRecord('brand',saved).catch(()=>false);
+ return json({ok:true,sheetsSynced},{status:201});
 });

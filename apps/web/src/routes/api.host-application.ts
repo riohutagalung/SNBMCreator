@@ -1,6 +1,7 @@
 import { apiError, json, withApi } from '@/lib/api.server';
 import { clientIdentifier, createRateLimiter } from '@/lib/rate-limit.server';
 import { checkedFile, getBackend, multipartWithinLimit, sameOrigin, text, validEmail, validHttps } from '@/lib/snbm-submission.server';
+import { mirrorSavedRecord } from '@/lib/snbm-sheets.server';
 
 const allowHost=createRateLimiter({maxRequests:4,windowSeconds:3600});
 export const action=withApi(async({request})=>{
@@ -46,16 +47,18 @@ export const action=withApi(async({request})=>{
      if(videoUpload.error)throw videoUpload.error;
      uploaded.push(videoPath);
    }
-   const {error:dbError}=await db.from('snbm_host_applications').insert({
+   const {data:saved,error:dbError}=await db.from('snbm_host_applications').insert({
      id,name,email,phone,city:text(form,'city',120),
      employment_type:text(form,'employment_type',40)||'Full time',
      size_type:text(form,'size_type',80),style:text(form,'style',40),weight,
      category:text(form,'category',200),experience,daily_live_hours:hours,
      best_daily_gmv:gmv,social_accounts,portfolio_url:portfolio,trial_video_url:trialUrl,
      cv_path:cvPath,trial_video_path:videoPath,consent_at:new Date().toISOString(),status:'baru'
-   });
-   if(dbError)throw dbError;
-   return json({ok:true},{status:201});
+   }).select('*').single();
+   if(dbError || !saved)throw dbError || new Error('Record unavailable after save');
+   // Saved Supabase records must NEVER be rolled back if Google Sheets is offline.
+   const sheetsSynced = await mirrorSavedRecord('host',saved).catch(()=>false);
+   return json({ok:true,sheetsSynced},{status:201});
  }catch{
    if(uploaded.length)await bucket.remove(uploaded).catch(()=>{});
    return apiError(503,'Data belum berhasil disimpan. Silakan coba lagi.');

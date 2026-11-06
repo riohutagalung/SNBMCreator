@@ -23,5 +23,6 @@ export default [
 	route('api/health', 'routes/api.health.ts'),
  route('api/host-application', 'routes/api.host-application.ts'),
  route('api/brand-enquiry', 'routes/api.brand-enquiry.ts'),
+ route('api/sheets-sync', 'routes/api.sheets-sync.ts'),
 	route('api/*', 'routes/api.$.ts'),
 ] satisfies RouteConfig;
