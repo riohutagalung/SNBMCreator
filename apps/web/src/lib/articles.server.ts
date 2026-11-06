@@ -24,9 +24,9 @@ export async function getPublishedArticles(): Promise<Article[]> {
     const { data, error } = await db.from('snbm_articles').select('*')
       .eq('published', true).order('published_at', { ascending: false })
       .limit(100).abortSignal(controller.signal);
-    if (error) return fallback;
+    if (error) return [];
     return (data ?? []) as Article[];
-  } catch { return fallback; }
+  } catch { return []; }
   finally { clearTimeout(timer); }
 }
 export async function getPublishedArticle(slug: string): Promise<Article | null> {
@@ -39,8 +39,8 @@ export async function getPublishedArticle(slug: string): Promise<Article | null>
     const { data, error } = await db.from('snbm_articles').select('*')
       .eq('slug', slug).eq('published', true)
       .abortSignal(controller.signal).maybeSingle();
-    if (error) return fallback.find(a => a.slug === slug) ?? null;
+    if (error) return null;
     return data as Article | null;
-  } catch { return fallback.find(a => a.slug === slug) ?? null; }
+  } catch { return null; }
   finally { clearTimeout(timer); }
 }

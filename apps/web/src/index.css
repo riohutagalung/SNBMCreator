@@ -444,3 +444,6 @@ html,body,h1,h2,h3,h4,h5,h6,p,a,button,input,select,textarea,label,strong,small,
 .article-admin-error { color:#b42336; margin-top:15px; font-size:12px; }
 .article-admin-notice { color:#1a754e; margin-top:15px; font-size:12px; }
 @media(max-width:850px){.article-admin-layout{grid-template-columns:1fr;}.article-admin-list{max-height:340px;overflow-y:auto;}}
+
+/* Keep dashboard navigation usable when the additional Artikel tab is present. */
+.admin-page .admin-tabs { flex-wrap:wrap; row-gap:8px; }
