@@ -69,7 +69,7 @@ export default function Admin() {
           <h1>Dashboard.</h1>
           <p className="page-intro">Masuk sebagai <strong>{user?.email}</strong>. Kelola pendaftar host, kontak masuk, dan konten situs.</p>
         </div>
-        <button className="button small" onClick={() => { void logout(); }}>Keluar</button>
+        <button className="button small" onClick={() => { void logout().then(() => { window.location.assign('/login'); }); }}>Keluar</button>
       </div>
 
       <nav className="filter-row admin-tabs">
