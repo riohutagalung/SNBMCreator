@@ -4,11 +4,11 @@ import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '@/lib/language';
 
 const categories = [
-  { id: 'wanita', idName: 'Fashion Wanita', en: "Women's Fashion", image: '/assets/snbm/hero-fashion-wanita.webp', thumb: '/assets/snbm/category-wanita.svg' },
-  { id: 'muslim', idName: 'Fashion Muslim', en: 'Modest Fashion', image: '/assets/snbm/hero-fashion-muslim.webp', thumb: '/assets/snbm/category-muslim.svg' },
-  { id: 'tas', idName: 'Tas Wanita', en: "Women's Bags", image: '/assets/snbm/hero-tas-wanita.webp', thumb: '/assets/snbm/category-tas.svg' },
-  { id: 'underwear', idName: 'Underwear', en: 'Underwear', image: '/assets/snbm/hero-underwear.webp', thumb: '/assets/snbm/category-underwear.svg' },
-  { id: 'anak', idName: 'Fashion Kids', en: 'Kidswear', image: '/assets/snbm/hero-fashion-kids.webp', thumb: '/assets/snbm/category-kids.svg' },
+  { id: 'wanita', idName: 'Fashion Wanita', en: "Women's Fashion", image: '/assets/snbm/hero-fashion-wanita.webp?v=hd20261106', thumb: '/assets/snbm/category-wanita.svg' },
+  { id: 'muslim', idName: 'Fashion Muslim', en: 'Modest Fashion', image: '/assets/snbm/hero-fashion-muslim.webp?v=hd20261106', thumb: '/assets/snbm/category-muslim.svg' },
+  { id: 'tas', idName: 'Tas Wanita', en: "Women's Bags", image: '/assets/snbm/hero-tas-wanita.webp?v=hd20261106', thumb: '/assets/snbm/category-tas.svg' },
+  { id: 'underwear', idName: 'Underwear', en: 'Underwear', image: '/assets/snbm/hero-underwear.webp?v=hd20261106', thumb: '/assets/snbm/category-underwear.svg' },
+  { id: 'anak', idName: 'Fashion Kids', en: 'Kidswear', image: '/assets/snbm/hero-fashion-kids.webp?v=hd20261106', thumb: '/assets/snbm/category-kids.svg' },
 ] as const;
 const AUTOPLAY_MS = 4000;
 const MANUAL_HOLD_MS = 12000;
