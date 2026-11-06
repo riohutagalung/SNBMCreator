@@ -29,12 +29,15 @@ interface BaseRow { id: string; created_at?: string; }
 interface Enquiry extends BaseRow {
   name: string; email: string; phone: string; kind: string; message: string;
   city: string; weight: number; style: string; created_at: string;
+  brand_name: string; product_category: string; platform: string; store_url: string; consent_at: string;
 }
 interface HostApp extends BaseRow {
   cv_path?: string; trial_video_path?: string;
   name: string; email: string; phone: string; city: string;
   employment_type: string; size_type: string; style: string; weight: number;
   category: string; experience: string; portfolio_url: string; status: string; created_at: string;
+  daily_live_hours: number | null; best_daily_gmv: number | null; social_accounts: string;
+  trial_video_url: string; consent_at: string;
 }
 interface Contact extends BaseRow { email: string; created_at: string; }
 interface ContentRow extends BaseRow { key: string; label: string; type: string; value: string; }
@@ -48,6 +51,37 @@ const fmtDate = (iso: string) => {
 export default function Admin() {
   const { user, logout } = useAuth();
   const [tab, setTab] = useState<'ringkas' | 'host' | 'kontak' | 'konten'>('ringkas');
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
+  const syncSheets = async () => {
+    if (!supabase) { setSyncMessage('Supabase belum terhubung.'); return; }
+    setSyncBusy(true);
+    setSyncMessage('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Silakan login ulang sebagai admin.');
+      const response = await fetch('/api/sheets-sync', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + session.access_token },
+      });
+      const result: unknown = await response.json();
+      if (!response.ok) {
+        const detail = result && typeof result === 'object' && 'error' in result ? result.error : null;
+        throw new Error(typeof detail === 'string' ? detail : 'Sinkronisasi belum berhasil.');
+      }
+      if (!result || typeof result !== 'object' || !('host' in result) || !('brand' in result)) {
+        throw new Error('Respons Google Sheets tidak valid.');
+      }
+      const host = result.host as { synced: number; failed: number; pending: number };
+      const brand = result.brand as { synced: number; failed: number; pending: number };
+      setSyncMessage('Tersinkron: ' + host.synced + ' host, ' + brand.synced +
+        ' brand. Gagal: ' + (host.failed + brand.failed) +
+        '. Masih menunggu: ' + (host.pending + brand.pending) +
+        '. Jika masih menunggu, jalankan sinkronisasi lagi.');
+    } catch (error) {
+      setSyncMessage(error instanceof Error ? error.message : 'Tidak bisa menyinkronkan Google Sheets.');
+    } finally { setSyncBusy(false); }
+  };
 
   const enquiries = useSupabaseRecords<Enquiry>('snbm_enquiries', { sort: '-created_at', realtime: true });
   const hosts = useSupabaseRecords<HostApp>('snbm_host_applications', { sort: '-created_at', realtime: true });
@@ -101,6 +135,14 @@ export default function Admin() {
             <p className="subtle">Ubah teks, tautan gambar, kategori, profil host, dan bagian utama tanpa mengubah kode.</p>
             <button className="button small" onClick={() => setTab('konten')}>Kelola situs →</button>
           </div>
+          <div className="gmv-panel">
+            <div className="gmv-header"><strong>Google Sheets</strong><span>↗</span></div>
+            <p className="subtle">Salin pendaftaran yang belum tersinkron ke tab Pendaftaran Host dan Kerja Sama Brand.</p>
+            <button className="button small" disabled={syncBusy} onClick={() => { void syncSheets(); }}>
+              {syncBusy ? 'Menyinkronkan…' : 'Sinkronkan Google Sheets →'}
+            </button>
+            {syncMessage && <p className="subtle" role="status">{syncMessage}</p>}
+          </div>
         </div>
       )}
 
@@ -130,8 +172,11 @@ export default function Admin() {
                     <span className="admin-tag">{e.kind}</span>
                   </div>
                   <p><a href={`mailto:${e.email}`}>{e.email}</a>{e.phone ? ` · ${e.phone}` : ''}{e.city ? ` · ${e.city}` : ''}</p>
-                  {e.weight ? <small>Berat: {e.weight} kg</small> : null}{e.style ? <small> · {e.style}</small> : null}
+                  {e.brand_name && <p><small>Brand/toko: {e.brand_name}</small></p>}
+                  {(e.product_category || e.platform) && <p><small>{e.product_category || 'Kategori belum tercatat'} · {e.platform || 'Platform belum tercatat'}</small></p>}
+                  {e.store_url && <p><a href={e.store_url} target="_blank" rel="noreferrer">Toko / akun brand ↗</a></p>}
                   <p className="admin-msg">{e.message}</p>
+                  <p><small>Persetujuan data: {e.consent_at ? 'Ya' : 'Belum tercatat'}</small></p>
                   <small className="admin-date">{fmtDate(e.created_at)}</small>
                 </article>
               ))}
@@ -177,6 +222,10 @@ function HostCard({ host, onUpdate }: { host: HostApp; onUpdate: (status: string
       <p><small>{host.size_type}{host.style ? ` · ${host.style}` : ''}{host.weight ? ` · ${host.weight} kg` : ''}</small></p>
       {host.category && <p><small>Kategori: {host.category}</small></p>}
       {host.experience && <p className="admin-msg">{host.experience}</p>}
+      <p><small>Rata-rata live: {host.daily_live_hours ?? '—'} jam/hari · GMV tertinggi: {typeof host.best_daily_gmv === 'number' ? 'Rp ' + host.best_daily_gmv.toLocaleString('id-ID') : '—'}</small></p>
+      {host.social_accounts && <p><small>Akun sosial/live:</small> <span className="admin-msg">{host.social_accounts}</span></p>}
+      {host.trial_video_url && <p><a href={host.trial_video_url} target="_blank" rel="noreferrer">Tautan video trial ↗</a></p>}
+      <p><small>Persetujuan data: {host.consent_at ? 'Ya' : 'Belum tercatat'}</small></p>
       {host.portfolio_url && <p><a href={host.portfolio_url} target="_blank" rel="noreferrer">Lihat portofolio ↗</a></p>}
       {host.cv_path && <p><button type="button" onClick={() => { void showFile(host.cv_path!, 'cv'); }}>Siapkan tautan CV (60 detik)</button> {files.cv && <a href={files.cv} target="_blank" rel="noreferrer">Buka CV ↗</a>}</p>}
       {host.trial_video_path && <p><button type="button" onClick={() => { void showFile(host.trial_video_path!, 'video'); }}>Siapkan tautan video (60 detik)</button> {files.video && <a href={files.video} target="_blank" rel="noreferrer">Buka video ↗</a>}</p>}
