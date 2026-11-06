@@ -6,6 +6,8 @@ import { requireAuth } from '@/lib/require-auth';
 import { useAuth } from '@/hooks/use-auth';
 import { useSupabaseRecords } from '@/hooks/use-supabase-records';
 import { supabase } from '@/lib/supabase-client';
+import { ArticlesAdmin } from '@/components/admin/articles-admin';
+import type { Article } from '@/lib/articles';
 
 export function meta({ matches, location }: Route.MetaArgs) {
   return seo({ matches, location }, {
@@ -50,7 +52,7 @@ const fmtDate = (iso: string) => {
 
 export default function Admin() {
   const { user, logout } = useAuth();
-  const [tab, setTab] = useState<'ringkas' | 'host' | 'kontak' | 'konten'>('ringkas');
+  const [tab, setTab] = useState<'ringkas' | 'host' | 'kontak' | 'konten' | 'artikel'>('ringkas');
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
   const syncSheets = async () => {
@@ -87,12 +89,14 @@ export default function Admin() {
   const hosts = useSupabaseRecords<HostApp>('snbm_host_applications', { sort: '-created_at', realtime: true });
   const contacts = useSupabaseRecords<Contact>('snbm_contacts', { sort: '-created_at', realtime: true });
   const content = useSupabaseRecords<ContentRow>('snbm_content', { sort: 'label', realtime: true });
+  const articleData = useSupabaseRecords<Article>('snbm_articles', { sort: '-updated_at' });
 
   const tabs: { id: typeof tab; label: string; count: number }[] = [
     { id: 'ringkas', label: 'Ringkasan', count: 0 },
     { id: 'host', label: 'Pendaftar host', count: hosts.records.length },
     { id: 'kontak', label: 'Kontak masuk', count: enquiries.records.length },
     { id: 'konten', label: 'Konten & tampilan', count: content.records.length },
+    { id: 'artikel', label: 'Kelola Artikel', count: articleData.records.length },
   ];
 
   return (
@@ -134,6 +138,11 @@ export default function Admin() {
             <div className="gmv-header"><strong>Konten & tampilan</strong><span>{content.records.length}</span></div>
             <p className="subtle">Ubah teks, tautan gambar, kategori, profil host, dan bagian utama tanpa mengubah kode.</p>
             <button className="button small" onClick={() => setTab('konten')}>Kelola situs →</button>
+          </div>
+          <div className="gmv-panel">
+            <div className="gmv-header"><strong>Kelola Artikel</strong><span>{articleData.records.length}</span></div>
+            <p className="subtle">Buat artikel, edit judul, isi, gambar, dan tentukan status Draft atau Publikasi.</p>
+            <button className="button small" onClick={() => setTab('artikel')}>Tulis artikel →</button>
           </div>
           <div className="gmv-panel">
             <div className="gmv-header"><strong>Google Sheets</strong><span>↗</span></div>
@@ -181,6 +190,13 @@ export default function Admin() {
                 </article>
               ))}
             </div>}
+        </section>
+      )}
+
+      {tab === 'artikel' && (
+        <section>
+          <ArticlesAdmin records={articleData.records} reload={articleData.reload}
+            isLoading={articleData.isLoading} error={articleData.error}/>
         </section>
       )}
 

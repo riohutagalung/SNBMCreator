@@ -2,7 +2,7 @@ import { useCallback,useEffect,useRef,useState } from 'react';
 import { supabase } from '@/lib/supabase-client';
 type Options={sort?:string;perPage?:number;realtime?:boolean;enabled?:boolean};
 type Row={id:string};
-const TABLES=new Set(['snbm_host_applications','snbm_enquiries','snbm_contacts','snbm_content']);
+const TABLES=new Set(['snbm_host_applications','snbm_enquiries','snbm_contacts','snbm_content','snbm_articles']);
 export function useSupabaseRecords<T extends Row>(table:string,options:Options={}) {
  const {sort='-created_at',perPage,realtime=false,enabled=true}=options;
  const [records,setRecords]=useState<T[]>([]);
