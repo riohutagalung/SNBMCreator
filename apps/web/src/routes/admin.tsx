@@ -178,8 +178,8 @@ function HostCard({ host, onUpdate }: { host: HostApp; onUpdate: (status: string
       {host.category && <p><small>Kategori: {host.category}</small></p>}
       {host.experience && <p className="admin-msg">{host.experience}</p>}
       {host.portfolio_url && <p><a href={host.portfolio_url} target="_blank" rel="noreferrer">Lihat portofolio ↗</a></p>}
-      {host.cv_path && <p><button type="button" onClick={() => { void showFile(host.cv_path, 'cv'); }}>Siapkan tautan CV (60 detik)</button> {files.cv && <a href={files.cv} target="_blank" rel="noreferrer">Buka CV ↗</a>}</p>}
-      {host.trial_video_path && <p><button type="button" onClick={() => { void showFile(host.trial_video_path, 'video'); }}>Siapkan tautan video (60 detik)</button> {files.video && <a href={files.video} target="_blank" rel="noreferrer">Buka video ↗</a>}</p>}
+      {host.cv_path && <p><button type="button" onClick={() => { void showFile(host.cv_path!, 'cv'); }}>Siapkan tautan CV (60 detik)</button> {files.cv && <a href={files.cv} target="_blank" rel="noreferrer">Buka CV ↗</a>}</p>}
+      {host.trial_video_path && <p><button type="button" onClick={() => { void showFile(host.trial_video_path!, 'video'); }}>Siapkan tautan video (60 detik)</button> {files.video && <a href={files.video} target="_blank" rel="noreferrer">Buka video ↗</a>}</p>}
       {fileError && <p role="alert">{fileError}</p>}
       <div className="admin-status">
         {statuses.map(s => (
