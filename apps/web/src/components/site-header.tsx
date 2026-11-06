@@ -1,11 +1,12 @@
 import { Link, NavLink } from 'react-router';
 import { ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '@/lib/language';
+import { SnbmBrand } from '@/components/snbm-brand';
 
 export function SiteHeader() {
   const { language, setLanguage, pick } = useLanguage();
   return <header className="site-header refreshed-header">
-    <Link className="brand" to="/" aria-label="SNBM Creator, beranda"><img className="snbm-brand-s" src="/assets/snbm/s-mark.svg" alt="" width="30" height="30"/>SNBM<span>CREATOR®</span></Link>
+    <Link className="snbm-logo-link" to="/" aria-label="SNBM Creator, beranda"><SnbmBrand /></Link>
     <nav aria-label={pick('Navigasi utama', 'Main navigation')}>
       <NavLink to="/" end>{pick('Beranda','Home')}</NavLink>
       <NavLink to="/tentang">{pick('Tentang kami','About')}</NavLink>

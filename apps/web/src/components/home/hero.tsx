@@ -3,72 +3,37 @@ import { Link } from 'react-router';
 import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '@/lib/language';
 
-type Category = {
-  id: string;
-  idName: string;
-  en: string;
-  image: string;
-  short: string;
-  enShort: string;
-};
-
-// Local, individually authored images. Never depend on an external image host
-// for the homepage. Order matches the 15.5 second looping motion sequence.
-const categories: Category[] = [
-  { id: 'wanita', idName: 'Fashion wanita', en: 'Women’s fashion', short: 'Koleksi fashion wanita', enShort: 'Women’s fashion', image: '/assets/snbm/hero-fashion-wanita.webp' },
-  { id: 'muslim', idName: 'Fashion muslim', en: 'Modest fashion', short: 'Fashion muslim', enShort: 'Modest fashion', image: '/assets/snbm/hero-fashion-muslim.webp' },
-  { id: 'tas', idName: 'Tas wanita', en: 'Women’s bags', short: 'Tas wanita', enShort: 'Women’s bags', image: '/assets/snbm/hero-tas-wanita.webp' },
-  { id: 'underwear', idName: 'Underwear', en: 'Underwear', short: 'Koleksi underwear', enShort: 'Underwear collection', image: '/assets/snbm/hero-underwear.webp' },
-  { id: 'anak', idName: 'Fashion kids', en: 'Kidswear', short: 'Fashion anak', enShort: 'Kidswear', image: '/assets/snbm/hero-fashion-kids.webp' },
-];
-
-const SECTION_SECONDS = 3;
+const categories = [
+  { id: 'wanita', idName: 'Fashion Wanita', en: "Women's Fashion", image: '/assets/snbm/hero-fashion-wanita.webp', thumb: '/assets/snbm/category-wanita.svg' },
+  { id: 'muslim', idName: 'Fashion Muslim', en: 'Modest Fashion', image: '/assets/snbm/hero-fashion-muslim.webp', thumb: '/assets/snbm/category-muslim.svg' },
+  { id: 'tas', idName: 'Tas Wanita', en: "Women's Bags", image: '/assets/snbm/hero-tas-wanita.webp', thumb: '/assets/snbm/category-tas.svg' },
+  { id: 'underwear', idName: 'Underwear', en: 'Underwear', image: '/assets/snbm/hero-underwear.webp', thumb: '/assets/snbm/category-underwear.svg' },
+  { id: 'anak', idName: 'Fashion Kids', en: 'Kidswear', image: '/assets/snbm/hero-fashion-kids.webp', thumb: '/assets/snbm/category-kids.svg' },
+] as const;
+const AUTOPLAY_MS = 4000;
+const MANUAL_HOLD_MS = 12000;
 
 export function Hero({ content: _content }: { content?: Record<string, string> }) {
   const { pick } = useLanguage();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const resetRef = useRef<number | undefined>(undefined);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [manualIndex, setManualIndex] = useState<number | null>(null);
-  const [videoUnavailable, setVideoUnavailable] = useState(false);
+  const resumeAutoplayAt = useRef(0);
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.muted = true;
-      video.playsInline = true;
-      void video.play().catch(() => setVideoUnavailable(true));
-    }
-    // The same carousel works even when autoplay/video is unavailable.
+    // Keep the same carousel for desktop and mobile. Never replay the outdated video.
     const timer = window.setInterval(() => {
-      if (document.hidden || manualIndex !== null) return;
-      if (videoUnavailable) setActiveIndex(index => (index + 1) % categories.length);
-    }, 3400);
+      if (document.hidden || Date.now() < resumeAutoplayAt.current) return;
+      setActiveIndex(previous => (previous + 1) % categories.length);
+    }, AUTOPLAY_MS);
     return () => window.clearInterval(timer);
-  }, [manualIndex, videoUnavailable]);
-
-  // The manual category timeout must survive re-renders; only clear it on unmount.
-  useEffect(() => () => {
-    if (resetRef.current !== undefined) window.clearTimeout(resetRef.current);
   }, []);
 
   const showCategory = (index: number) => {
-    const next = (index + categories.length) % categories.length;
-    setActiveIndex(next);
-    setManualIndex(next);
-    if (resetRef.current !== undefined) window.clearTimeout(resetRef.current);
-    // Resume autoplay after someone has finished exploring a category.
-    resetRef.current = window.setTimeout(() => {
-      setManualIndex(null);
-      const video = videoRef.current;
-      if (video) {
-        video.currentTime = next * SECTION_SECONDS;
-        void video.play().catch(() => setVideoUnavailable(true));
-      }
-    }, 10000);
+    setActiveIndex((index + categories.length) % categories.length);
+    // A manual choice remains visible before the automatic carousel resumes.
+    resumeAutoplayAt.current = Date.now() + MANUAL_HOLD_MS;
   };
 
-  const visible = categories[manualIndex ?? activeIndex];
+  const active = categories[activeIndex];
   return <section className="hero snbm-hero" id="beranda">
     <div className="snbm-hero-grid">
       <div className="snbm-hero-copy">
@@ -76,48 +41,36 @@ export function Hero({ content: _content }: { content?: Record<string, string> }
         <h1>{pick('Kembangkan brand bersama', 'Grow your brand with')} <span>{pick('host live yang tepat.', 'the right live hosts.')}</span></h1>
         <p>{pick(
           'Berawal dari pengalaman berjualan fashion, termasuk penjualan ribuan hingga puluhan ribu produk dalam sehari, kini kami fokus mencari dan membina talenta untuk menjadi host live shopping andalan berbagai brand.',
-          'With years of experience selling fashion, including days with thousands to tens of thousands of items sold, we now focus on finding and developing live-shopping hosts for brands.'
+          'With experience selling fashion, including days with thousands to tens of thousands of items sold, we now focus on finding and developing live-shopping hosts for brands.'
         )}</p>
         <div className="snbm-hero-actions">
           <Link className="button" to="/kontak?jenis=brand">{pick('Mulai kolaborasi','Work with us')} <ArrowUpRight size={19}/></Link>
           <Link className="button snbm-button-outline" to="/gabung-host">{pick('Daftar jadi host','Apply as a host')} <ArrowUpRight size={19}/></Link>
         </div>
       </div>
-      <div className="snbm-hero-visual" role="region" aria-label={pick('Pilihan kategori fashion SNBM Creator','SNBM Creator fashion category gallery')}>
-        <video
-          ref={videoRef}
-          className="snbm-hero-motion"
-          autoPlay muted loop playsInline preload="metadata"
-          poster="/assets/snbm/hero-fashion-wanita.webp"
-          onTimeUpdate={event => {
-            if (manualIndex !== null) return;
-            const current = Math.min(categories.length - 1, Math.floor(event.currentTarget.currentTime / SECTION_SECONDS));
-            setActiveIndex(current);
-          }}
-          onError={() => setVideoUnavailable(true)}
-          aria-hidden="true"
-        >
-          <source src="/assets/snbm/hero-fashion-categories.mp4" type="video/mp4"/>
-        </video>
+      <div className="snbm-hero-visual" role="region" aria-roledescription="carousel" aria-label={pick('Galeri kategori SNBM Creator','SNBM Creator category gallery')}>
         <img
-          key={visible.id}
-          className={manualIndex !== null || videoUnavailable ? 'snbm-hero-category-image snbm-image-visible' : 'snbm-hero-category-image'}
-          src={visible.image}
+          key={active.id}
+          className="snbm-hero-category-image snbm-image-visible"
+          src={active.image}
           width="1920" height="1080"
-          alt={pick(`Tampilan ${visible.idName}`, `${visible.en} showcase`)}
-          fetchPriority={visible.id === 'wanita' ? 'high' : undefined}
+          alt={pick(`Model dan produk kategori ${active.idName}`, `${active.en} fashion and product showcase`)}
+          fetchPriority={activeIndex === 0 ? 'high' : undefined}
         />
-        <span className="snbm-hero-overline">{pick(visible.short, visible.enShort)}</span>
+        <span className="snbm-hero-signature" aria-hidden="true">{pick(active.idName,active.en)}</span>
         <button type="button" className="snbm-hero-arrow snbm-hero-prev" aria-label={pick('Kategori sebelumnya','Previous category')} onClick={() => showCategory(activeIndex - 1)}><ArrowLeft size={19}/></button>
         <button type="button" className="snbm-hero-arrow snbm-hero-next" aria-label={pick('Kategori berikutnya','Next category')} onClick={() => showCategory(activeIndex + 1)}><ArrowRight size={19}/></button>
-        <div className="snbm-category-controls" role="group" aria-label={pick('Pilih kategori fashion','Select fashion category')}>
+        <div className="snbm-category-controls" role="group" aria-label={pick('Pilih kategori fashion','Choose a fashion category')}>
           {categories.map((item, index) => <button
             key={item.id}
             type="button"
             onClick={() => showCategory(index)}
-            className={index === (manualIndex ?? activeIndex) ? 'snbm-category-hotspot is-featured' : 'snbm-category-hotspot'}
-            aria-pressed={index === (manualIndex ?? activeIndex)}
-          >{pick(item.idName, item.en)}</button>)}
+            className={index === activeIndex ? 'snbm-category-hotspot is-featured' : 'snbm-category-hotspot'}
+            aria-pressed={index === activeIndex}
+          >
+            <img className="snbm-category-thumb" src={item.thumb} alt="" width="42" height="42" loading="lazy"/>
+            <span>{pick(item.idName, item.en)}</span>
+          </button>)}
         </div>
       </div>
     </div>

@@ -20,8 +20,8 @@ import { WebMcpTools } from '@/components/webmcp-tools';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'stylesheet', href: stylesheet },
-	{ rel: 'icon', href: '/assets/snbm/s-mark.svg', type: 'image/svg+xml' },
-	{ rel: 'apple-touch-icon', href: '/assets/snbm/s-mark.png' },
+	{ rel: 'icon', href: '/assets/snbm/s-mark.svg?v=20261106', type: 'image/svg+xml' },
+	{ rel: 'apple-touch-icon', href: '/assets/snbm/s-mark.svg?v=20261106' },
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
 	{
 		rel: 'preconnect',
@@ -30,7 +30,7 @@ export const links: Route.LinksFunction = () => [
 	},
 	{
 		rel: 'stylesheet',
-		href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap',
+		href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700&display=swap',
 	},
 ];
 
