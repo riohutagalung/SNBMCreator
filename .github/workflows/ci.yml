@@ -40,11 +40,23 @@ jobs:
           curl -fsS -H 'Accept: text/markdown' http://127.0.0.1:3000/ | grep -q 'SNBM Creator'
           curl -fsS http://127.0.0.1:3000/.well-known/mcp/server-card.json | grep -q 'serverInfo'
           curl -fsS -H 'Content-Type: application/json' -X POST -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' http://127.0.0.1:3000/mcp | grep -q 'get_snbm_business_info'
+          # Neither public application endpoint may ever claim success with no backend configured.
+          CODE=$(curl -sS -o /tmp/host-rejected.json -w '%{http_code}' -X POST -F 'name=Test' "http://127.0.0.1:3000/api/host-application")
+          test "$CODE" = '400'
+          grep -q '"error"' /tmp/host-rejected.json
+          CODE=$(curl -sS -o /tmp/brand-rejected.json -w '%{http_code}' -X POST -F 'name=Test' "http://127.0.0.1:3000/api/brand-enquiry")
+          test "$CODE" = '503'
+          grep -q '"error"' /tmp/brand-rejected.json
           CSS=$(find dist/apps/web/client/assets -name 'index-*.css' -print -quit)
           curl -fsS -o /dev/null "http://127.0.0.1:3000/assets/$(basename "$CSS")"
           for asset in logo.png favicon.png regular-hijab.webp regular-nonhijab.webp big-hijab.webp big-nonhijab.webp hero-still.webp hero-fashion.webm; do
             curl -fsS -o /dev/null "http://127.0.0.1:3000/assets/snbm/$asset"
           done
-      - name: Check PocketBase migration syntax
+      - name: Supabase migration guardrails
+        run: |
+          grep -q "alter table public.snbm_host_applications enable row level security" supabase/migrations/202611060001_snbm_backend.sql
+          grep -q "alter table public.snbm_enquiries enable row level security" supabase/migrations/202611060001_snbm_backend.sql
+          grep -q "snbm-host-private" supabase/migrations/202611060001_snbm_backend.sql
+      - name: Check PocketBase migration syntax (legacy, unused)
         run: |
           for script in apps/pocketbase/pb_migrations/*.js; do node --check "$script"; done
