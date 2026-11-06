@@ -12,6 +12,7 @@ export default [
  route('gabung-host', 'routes/gabung-host.tsx'),
  route('login', 'routes/login.tsx'),
  route('admin', 'routes/admin.tsx'),
+ route('berkas-host', 'routes/berkas-host.tsx'),
  route('blog', 'routes/blog.tsx'),
  route('blog/:slug', 'routes/blog.$slug.tsx'),
  route('cart', 'routes/cart.tsx'),

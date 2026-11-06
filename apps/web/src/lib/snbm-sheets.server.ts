@@ -32,6 +32,25 @@ export function sheetsMirrorConfigured(): boolean {
     process.env.SNBM_SHEETS_API_TOKEN.length >= 32);
 }
 
+/**
+ * The Sheet needs permanent clickable links, but the actual CV/video paths stay
+ * private in Supabase. The visitor must authenticate as an SNBM admin and pass
+ * RLS before the website can mint a 60-second signed download URL.
+ */
+function sheetFriendlyRecord(type: SheetType, record: SavedRecord): SavedRecord {
+  if (type !== 'host') return record;
+  const base = 'https://snbmcreator.com/berkas-host';
+  const urlFor = (kind: 'cv' | 'video', path: unknown) =>
+    typeof path === 'string' && path.length > 0
+      ? base + '?id=' + encodeURIComponent(record.id) + '&jenis=' + kind
+      : '';
+  return {
+    ...record,
+    cv_path: urlFor('cv', record.cv_path),
+    trial_video_path: urlFor('video', record.trial_video_path),
+  };
+}
+
 async function deliverToSheet(type: SheetType, record: SavedRecord): Promise<boolean> {
   const token = process.env.SNBM_SHEETS_API_TOKEN;
   const url = endpoint();
@@ -42,7 +61,7 @@ async function deliverToSheet(type: SheetType, record: SavedRecord): Promise<boo
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      body: JSON.stringify({ token, type, record }),
+      body: JSON.stringify({ token, type, record: sheetFriendlyRecord(type, record) }),
       redirect: 'follow',
       signal: AbortSignal.timeout(12000),
       cache: 'no-store',
