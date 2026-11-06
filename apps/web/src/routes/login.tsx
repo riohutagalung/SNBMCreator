@@ -28,7 +28,8 @@ export default function Login() {
        setError('Akun Supabase terdaftar tetapi belum memiliki izin admin. Periksa daftar snbm_admins.');
        return;
      }
-     navigate('/admin');
+     const next = params.get('next');
+     navigate(next?.startsWith('/berkas-host?') && next.length < 500 ? next : '/admin');
    }catch(cause){
      setError(!supabase?'Supabase belum dikonfigurasi di Hostinger.'
        :cause instanceof Error&&/Invalid login credentials/i.test(cause.message)

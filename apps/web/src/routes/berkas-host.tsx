@@ -17,8 +17,10 @@ export function meta({ matches, location }: Route.MetaArgs) {
 
 // This is a browser-side route; the actual protection is Supabase RLS on both
 // the application row and the private Storage bucket.
-export async function clientLoader() {
-  await requireAuth();
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const url = new URL(request.url);
+  const backToFile = url.pathname + url.search;
+  await requireAuth('/login?next=' + encodeURIComponent(backToFile));
   return null;
 }
 clientLoader.hydrate = true as const;
