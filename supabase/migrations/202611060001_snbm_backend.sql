@@ -162,5 +162,10 @@ insert into public.snbm_content (key,label,type,value) values
  ('hero_title','Judul utama','text','Kembangkan brand bersama'),
  ('hero_title_highlight','Judul utama — highlight','text','host live yang tepat.'),
  ('hero_intro','Pengantar hero','textarea','Berawal dari pengalaman berjualan fashion, kami fokus mencari dan membina talenta untuk menjadi host live shopping andalan berbagai brand.'),
- ('hero_image','Hero gambar — URL','image','/assets/snbm/hero-fashion-wanita.webp')
+ ('hero_image','Hero gambar — URL','image','/assets/snbm/hero-fashion-wanita.webp'),
+ ('hero_wanita_image','Hero kategori — Fashion Wanita (URL)','image','/assets/snbm/hero-fashion-wanita.webp?v=hd20261106'),
+ ('hero_muslim_image','Hero kategori — Fashion Muslim (URL)','image','/assets/snbm/hero-fashion-muslim.webp?v=hd20261106'),
+ ('hero_tas_image','Hero kategori — Tas Wanita (URL)','image','/assets/snbm/hero-tas-wanita.webp?v=hd20261106'),
+ ('hero_underwear_image','Hero kategori — Underwear (URL)','image','/assets/snbm/hero-underwear.webp?v=hd20261106'),
+ ('hero_anak_image','Hero kategori — Fashion Kids (URL)','image','/assets/snbm/hero-fashion-kids.webp?v=hd20261106')
 on conflict (key) do nothing;

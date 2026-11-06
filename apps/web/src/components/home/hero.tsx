@@ -13,7 +13,16 @@ const categories = [
 const AUTOPLAY_MS = 4000;
 const MANUAL_HOLD_MS = 12000;
 
-export function Hero({ content: _content }: { content?: Record<string, string> }) {
+function safeImage(url: string | undefined, fallback: string) {
+ const image=(url??'').trim();
+ if(image.startsWith('/')&&!image.startsWith('//')&&!/[<>"'`\\]/.test(image))return image;
+ try {
+   const parsed=new URL(image);
+   if(parsed.protocol==='https:'&&!parsed.username&&!parsed.password)return parsed.href;
+ }catch{/* Invalid CMS URL falls back to the approved local image. */}
+ return fallback;
+}
+export function Hero({ content = {} }: { content?: Record<string, string> }) {
   const { pick } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
   const resumeAutoplayAt = useRef(0);
@@ -34,13 +43,14 @@ export function Hero({ content: _content }: { content?: Record<string, string> }
   };
 
   const active = categories[activeIndex];
+  const activeSrc = safeImage(content['hero_' + active.id + '_image'], active.image);
   return <section className="hero snbm-hero" id="beranda">
     <div className="snbm-hero-grid">
       <div className="snbm-hero-copy">
         <span className="eyebrow"><span className="live-dot"/>{pick('SELLER & AGENSI TALENTA FASHION', 'FASHION SELLER & TALENT AGENCY')}</span>
-        <h1>{pick('Kembangkan brand bersama', 'Grow your brand with')} <span>{pick('host live yang tepat.', 'the right live hosts.')}</span></h1>
+        <h1>{pick(content.hero_title || 'Kembangkan brand bersama', 'Grow your brand with')} <span>{pick(content.hero_title_highlight || 'host live yang tepat.', 'the right live hosts.')}</span></h1>
         <p>{pick(
-          'Berawal dari pengalaman berjualan fashion, termasuk penjualan ribuan hingga puluhan ribu produk dalam sehari, kini kami fokus mencari dan membina talenta untuk menjadi host live shopping andalan berbagai brand.',
+          content.hero_intro || 'Berawal dari pengalaman berjualan fashion, termasuk penjualan ribuan hingga puluhan ribu produk dalam sehari, kini kami fokus mencari dan membina talenta untuk menjadi host live shopping andalan berbagai brand.',
           'With experience selling fashion, including days with thousands to tens of thousands of items sold, we now focus on finding and developing live-shopping hosts for brands.'
         )}</p>
         <div className="snbm-hero-actions">
@@ -52,7 +62,7 @@ export function Hero({ content: _content }: { content?: Record<string, string> }
         <img
           key={active.id}
           className="snbm-hero-category-image snbm-image-visible"
-          src={active.image}
+          src={activeSrc}
           width="1920" height="1080"
           alt={pick(`Model dan produk kategori ${active.idName}`, `${active.en} fashion and product showcase`)}
           fetchPriority={activeIndex === 0 ? 'high' : undefined}
