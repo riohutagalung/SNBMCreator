@@ -308,3 +308,8 @@ html,body,h1,h2,h3,h4,h5,h6,p,a,button,input,select,textarea,label,strong,small,
  .snbm-category-controls .snbm-category-thumb{width:clamp(14px,4.5vw,20px);height:clamp(14px,4.5vw,20px)}
 }
 @media(prefers-reduced-motion:reduce){.snbm-hero-visual .snbm-hero-category-image{animation:none}}
+
+
+/* Keep signatures in the free yellow space: category photography is framed on the right. */
+.snbm-hero-signature{left:6%;right:auto;top:22%;max-width:39%;font-size:clamp(17px,3vw,44px)}
+@media(max-width:760px){.snbm-hero-signature{left:5%;right:auto;top:20%;max-width:40%;font-size:clamp(13px,4vw,21px)}}
