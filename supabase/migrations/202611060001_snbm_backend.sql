@@ -69,19 +69,8 @@ alter table public.snbm_host_applications enable row level security;
 alter table public.snbm_enquiries enable row level security;
 alter table public.snbm_contacts enable row level security;
 
--- Avoid recursive RLS on the membership table; SECURITY DEFINER reads it as DB owner.
-create or replace function public.snbm_is_admin()
-returns boolean language sql stable security definer
-set search_path = ''
-as $$
-  select exists(
-    select 1 from public.snbm_admins
-    where user_id = (select auth.uid())
-  );
-$$;
-revoke all on function public.snbm_is_admin() from public, anon;
-grant execute on function public.snbm_is_admin() to authenticated;
-
+-- Use the authenticated user's own RLS-visible membership row.
+-- No SECURITY DEFINER function is needed or exposed to the public API.
 revoke all on table public.snbm_admins, public.snbm_content,
  public.snbm_host_applications, public.snbm_enquiries, public.snbm_contacts
  from anon, authenticated;
@@ -100,34 +89,67 @@ create policy snbm_content_public_read on public.snbm_content for select
 to anon, authenticated using (true);
 drop policy if exists snbm_content_admin_insert on public.snbm_content;
 create policy snbm_content_admin_insert on public.snbm_content for insert
-to authenticated with check ((select public.snbm_is_admin()));
+to authenticated with check ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)));
 drop policy if exists snbm_content_admin_update on public.snbm_content;
 create policy snbm_content_admin_update on public.snbm_content for update
-to authenticated using ((select public.snbm_is_admin()))
-with check ((select public.snbm_is_admin()));
+to authenticated using ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)))
+with check ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)));
 drop policy if exists snbm_content_admin_delete on public.snbm_content;
 create policy snbm_content_admin_delete on public.snbm_content for delete
-to authenticated using ((select public.snbm_is_admin()));
+to authenticated using ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)));
 
 drop policy if exists snbm_hosts_admin_read on public.snbm_host_applications;
 create policy snbm_hosts_admin_read on public.snbm_host_applications for select
-to authenticated using ((select public.snbm_is_admin()));
+to authenticated using ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)));
 drop policy if exists snbm_hosts_admin_update on public.snbm_host_applications;
 create policy snbm_hosts_admin_update on public.snbm_host_applications for update
-to authenticated using ((select public.snbm_is_admin()))
-with check ((select public.snbm_is_admin()));
+to authenticated using ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)))
+with check ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)));
 
 drop policy if exists snbm_enquiries_admin_read on public.snbm_enquiries;
 create policy snbm_enquiries_admin_read on public.snbm_enquiries for select
-to authenticated using ((select public.snbm_is_admin()));
+to authenticated using ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)));
 drop policy if exists snbm_enquiries_admin_update on public.snbm_enquiries;
 create policy snbm_enquiries_admin_update on public.snbm_enquiries for update
-to authenticated using ((select public.snbm_is_admin()))
-with check ((select public.snbm_is_admin()));
+to authenticated using ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)))
+with check ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)));
 
 drop policy if exists snbm_contacts_admin_read on public.snbm_contacts;
 create policy snbm_contacts_admin_read on public.snbm_contacts for select
-to authenticated using ((select public.snbm_is_admin()));
+to authenticated using ((select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+)));
 
 -- CVs and live videos belong in PRIVATE storage; the public browser has no upload grant.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -142,7 +164,10 @@ allowed_mime_types = excluded.allowed_mime_types;
 drop policy if exists snbm_host_private_admin_read on storage.objects;
 create policy snbm_host_private_admin_read on storage.objects for select
 to authenticated using (
-  bucket_id = 'snbm-host-private' and (select public.snbm_is_admin())
+  bucket_id = 'snbm-host-private' and (select exists(
+  select 1 from public.snbm_admins
+  where user_id = (select auth.uid())
+))
 );
 
 -- Start brand enquiries CLOSED until explicitly enabled in the admin CMS.
