@@ -1,52 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
-import pb from '@/lib/pocketbase-client';
-
-/**
- * Session state for the signed-in PocketBase user: user, isAuthed, isLoading,
- * login, signup, logout. No provider to mount — every caller reads the same
- * `pb.authStore`.
- *
- * The JWT is persisted in localStorage, which the server cannot read, so the
- * session is filled in after hydration. Render on `isLoading` (a spinner, a
- * skeleton) instead of the signed-out state, or a signed-in visitor sees a
- * "Sign in" button flash on every page load.
- */
+import type { User } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase-client';
 export function useAuth() {
-	const [user, setUser] = useState<typeof pb.authStore.record>(null);
-	const [isLoading, setIsLoading] = useState(true);
-
-	useEffect(() => {
-		setUser(pb.authStore.record);
-		setIsLoading(false);
-
-		return pb.authStore.onChange((_token, record) => setUser(record));
-	}, []);
-
-	return useMemo(
-		() => ({
-			user,
-			isAuthed: Boolean(user),
-			isLoading,
-			login: (email: string, password: string) =>
-				pb.collection('users').authWithPassword(email, password),
-			signup: async (
-				email: string,
-				password: string,
-				extraFields: Record<string, unknown> = {},
-			) => {
-				await pb.collection('users').create({
-					email,
-					password,
-					passwordConfirm: password,
-					...extraFields,
-				});
-
-				return pb.collection('users').authWithPassword(email, password);
-			},
-			logout: () => pb.authStore.clear(),
-		}),
-		[user, isLoading],
-	);
+ const [user,setUser] = useState<User | null>(null);
+ const [isLoading,setIsLoading] = useState(true);
+ useEffect(() => {
+   let active=true;
+   if(!supabase){setIsLoading(false);return;}
+   const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+     if(active){setUser(session?.user??null);setIsLoading(false);}
+   });
+   void supabase.auth.getUser().then(({data})=>{if(active){setUser(data.user);setIsLoading(false);}})
+     .catch(()=>{if(active)setIsLoading(false);});
+   return ()=>{active=false;subscription.unsubscribe();};
+ },[]);
+ return useMemo(()=>({
+   user,isAuthed:Boolean(user),isLoading,
+   login:async(email:string,password:string)=>{
+     if(!supabase)throw new Error('Supabase belum dikonfigurasi di Hostinger.');
+     const result=await supabase.auth.signInWithPassword({email,password});
+     if(result.error)throw result.error;
+     return result.data;
+   },
+   logout:async()=>{if(supabase)await supabase.auth.signOut();},
+ }),[user,isLoading]);
 }
-
 export default useAuth;

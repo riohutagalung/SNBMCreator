@@ -3,7 +3,7 @@ import { data, useNavigate } from 'react-router';
 import type { Route } from './+types/home';
 import { seo } from '@/lib/seo';
 import { heroImage } from '@/data/content';
-import { pocketbaseAdmin } from '@/lib/pocketbase-client.server';
+import { getPublicSupabase } from '@/lib/supabase-client.server';
 import { Hero } from '@/components/home/hero';
 import { HostCampaign } from '@/components/home/host-campaign';
 import { Agency } from '@/components/home/agency';
@@ -14,14 +14,15 @@ import { Collaborate } from '@/components/home/collaborate';
 
 export async function loader() {
   const content: Record<string, string> = {};
-  // Avoid holding up public pages with health-check retries before backend env is configured.
-  if (process.env.POCKETBASE_URL && process.env.PB_SUPERUSER_EMAIL && process.env.PB_SUPERUSER_PASSWORD) {
+  const client = getPublicSupabase();
+  if (client) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1800);
     try {
-      const result = await pocketbaseAdmin.listRecords<{ key: string; value: string }>('snbm_content', { perPage: 200 });
-      for (const record of result.items) content[record.key] = record.value || '';
-    } catch {
-      // PocketBase unavailable: render safe defaults until backend connectivity is configured.
-    }
+      const { data: rows } = await client.from('snbm_content').select('key,value').abortSignal(controller.signal);
+      for (const row of rows ?? []) content[row.key] = row.value || '';
+    } catch { /* Safe fallback when migration is not yet applied. */ }
+    finally { clearTimeout(timeout); }
   }
   // Content changes should not remain hidden behind a cached homepage response.
   return data({ content }, { headers: { 'Cache-Control': 'private, no-store, max-age=0, must-revalidate' } });

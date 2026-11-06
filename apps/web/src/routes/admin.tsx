@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import type { Route } from './+types/admin';
-import { Link, redirect } from 'react-router';
+import { Link } from 'react-router';
 import { seo } from '@/lib/seo';
 import { requireAuth } from '@/lib/require-auth';
 import { useAuth } from '@/hooks/use-auth';
-import { usePocketbaseRecords } from '@/hooks/use-pocketbase-records';
-import type { RecordModel } from 'pocketbase';
+import { useSupabaseRecords } from '@/hooks/use-supabase-records';
+import { supabase } from '@/lib/supabase-client';
 
 export function meta({ matches, location }: Route.MetaArgs) {
   return seo({ matches, location }, {
@@ -15,9 +15,8 @@ export function meta({ matches, location }: Route.MetaArgs) {
   });
 }
 
-export function clientLoader() {
-  const user = requireAuth();
-  if (user.role !== 'admin') throw redirect('/');
+export async function clientLoader() {
+  const user = await requireAuth();
   return { user };
 }
 clientLoader.hydrate = true as const;
@@ -26,17 +25,19 @@ export function HydrateFallback() {
   return <div />;
 }
 
-interface Enquiry extends RecordModel {
+interface BaseRow { id: string; created_at?: string; }
+interface Enquiry extends BaseRow {
   name: string; email: string; phone: string; kind: string; message: string;
-  city: string; weight: number; style: string; created: string;
+  city: string; weight: number; style: string; created_at: string;
 }
-interface HostApp extends RecordModel {
+interface HostApp extends BaseRow {
+  cv_path?: string; trial_video_path?: string;
   name: string; email: string; phone: string; city: string;
   employment_type: string; size_type: string; style: string; weight: number;
-  category: string; experience: string; portfolio_url: string; status: string; created: string;
+  category: string; experience: string; portfolio_url: string; status: string; created_at: string;
 }
-interface Contact extends RecordModel { email: string; created: string; }
-interface ContentRow extends RecordModel { key: string; label: string; type: string; value: string; }
+interface Contact extends BaseRow { email: string; created_at: string; }
+interface ContentRow extends BaseRow { key: string; label: string; type: string; value: string; }
 
 const fmtDate = (iso: string) => {
   try {
@@ -48,10 +49,10 @@ export default function Admin() {
   const { user, logout } = useAuth();
   const [tab, setTab] = useState<'ringkas' | 'host' | 'kontak' | 'konten'>('ringkas');
 
-  const enquiries = usePocketbaseRecords<Enquiry>('snbm_enquiries', { sort: '-created', realtime: true });
-  const hosts = usePocketbaseRecords<HostApp>('snbm_host_applications', { sort: '-created', realtime: true });
-  const contacts = usePocketbaseRecords<Contact>('snbm_contacts', { sort: '-created', realtime: true });
-  const content = usePocketbaseRecords<ContentRow>('snbm_content', { sort: 'label', realtime: true });
+  const enquiries = useSupabaseRecords<Enquiry>('snbm_enquiries', { sort: '-created_at', realtime: true });
+  const hosts = useSupabaseRecords<HostApp>('snbm_host_applications', { sort: '-created_at', realtime: true });
+  const contacts = useSupabaseRecords<Contact>('snbm_contacts', { sort: '-created_at', realtime: true });
+  const content = useSupabaseRecords<ContentRow>('snbm_content', { sort: 'label', realtime: true });
 
   const tabs: { id: typeof tab; label: string; count: number }[] = [
     { id: 'ringkas', label: 'Ringkasan', count: 0 },
@@ -68,7 +69,7 @@ export default function Admin() {
           <h1>Dashboard.</h1>
           <p className="page-intro">Masuk sebagai <strong>{user?.email}</strong>. Kelola pendaftar host, kontak masuk, dan konten situs.</p>
         </div>
-        <button className="button small" onClick={logout}>Keluar</button>
+        <button className="button small" onClick={() => { void logout().then(() => { window.location.assign('/login'); }); }}>Keluar</button>
       </div>
 
       <nav className="filter-row admin-tabs">
@@ -131,7 +132,7 @@ export default function Admin() {
                   <p><a href={`mailto:${e.email}`}>{e.email}</a>{e.phone ? ` · ${e.phone}` : ''}{e.city ? ` · ${e.city}` : ''}</p>
                   {e.weight ? <small>Berat: {e.weight} kg</small> : null}{e.style ? <small> · {e.style}</small> : null}
                   <p className="admin-msg">{e.message}</p>
-                  <small className="admin-date">{fmtDate(e.created)}</small>
+                  <small className="admin-date">{fmtDate(e.created_at)}</small>
                 </article>
               ))}
             </div>}
@@ -140,7 +141,7 @@ export default function Admin() {
 
       {tab === 'konten' && (
         <section>
-          <p className="subtle">Edit konten situs di sini. Gunakan URL gambar publik untuk kolom gambar. Untuk kolom bertipe area teks, baris baru dipertahankan di halaman. Perubahan disimpan ke PocketBase dan langsung dibaca pada kunjungan halaman berikutnya.</p>
+          <p className="subtle">Edit konten situs di sini. Gunakan URL gambar publik untuk kolom gambar. Untuk kolom bertipe area teks, baris baru dipertahankan di halaman. Perubahan disimpan ke Supabase dan langsung dibaca pada kunjungan halaman berikutnya.</p>
           {content.isLoading ? <p role="status">Memuat konten…</p> :
             content.error ? <p role="alert">Gagal memuat. <button onClick={() => void content.reload()}>Coba lagi</button></p> :
             <div className="admin-list">
@@ -157,6 +158,15 @@ export default function Admin() {
 function HostCard({ host, onUpdate }: { host: HostApp; onUpdate: (status: string) => void }) {
   const statuses = ['baru', 'ditinjau', 'diterima', 'ditolak'];
   const current = host.status || 'baru';
+  const [files, setFiles] = useState<Record<string,string>>({});
+  const [fileError, setFileError] = useState('');
+  const showFile = async (path: string, kind: string) => {
+    if (!supabase) { setFileError('Supabase belum tersedia.'); return; }
+    const { data, error } = await supabase.storage.from('snbm-host-private').createSignedUrl(path, 60);
+    if (error || !data?.signedUrl) { setFileError('Tidak bisa membuka berkas. Periksa akses admin.'); return; }
+    setFiles(current => ({ ...current, [kind]: data.signedUrl }));
+    setFileError('');
+  };
   return (
     <article className="admin-card">
       <div className="admin-card-head">
@@ -168,12 +178,15 @@ function HostCard({ host, onUpdate }: { host: HostApp; onUpdate: (status: string
       {host.category && <p><small>Kategori: {host.category}</small></p>}
       {host.experience && <p className="admin-msg">{host.experience}</p>}
       {host.portfolio_url && <p><a href={host.portfolio_url} target="_blank" rel="noreferrer">Lihat portofolio ↗</a></p>}
+      {host.cv_path && <p><button type="button" onClick={() => { void showFile(host.cv_path!, 'cv'); }}>Siapkan tautan CV (60 detik)</button> {files.cv && <a href={files.cv} target="_blank" rel="noreferrer">Buka CV ↗</a>}</p>}
+      {host.trial_video_path && <p><button type="button" onClick={() => { void showFile(host.trial_video_path!, 'video'); }}>Siapkan tautan video (60 detik)</button> {files.video && <a href={files.video} target="_blank" rel="noreferrer">Buka video ↗</a>}</p>}
+      {fileError && <p role="alert">{fileError}</p>}
       <div className="admin-status">
         {statuses.map(s => (
           <button key={s} className={`admin-chip ${s === current ? 'selected' : ''}`} onClick={() => onUpdate(s)}>{s}</button>
         ))}
       </div>
-      <small className="admin-date">{fmtDate(host.created)}</small>
+      <small className="admin-date">{fmtDate(host.created_at)}</small>
     </article>
   );
 }

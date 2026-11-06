@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { pocketbaseClient } from '@/lib/pocketbase-client';
 import { useFormSubmission } from '@/hooks/use-form-submission';
 import { useLanguage } from '@/lib/language';
 
@@ -18,7 +17,8 @@ export function HostJoinForm() {
    if (!(video instanceof File && video.size) && !link) throw new Error('Unggah video atau sertakan tautan video trial');
    if (video instanceof File && !video.size) data.delete('trial_video');
    if (link && !/^https:\/\//i.test(link)) throw new Error('Tautan video harus menggunakan HTTPS');
-   await pocketbaseClient.collection('snbm_host_applications').create(data);
+   const response = await fetch('/api/host-application', { method: 'POST', body: data });
+   if (!response.ok) throw new Error('Host application could not be submitted');
  }});
  return <form className="contact-form" onSubmit={event=>{
    const data = new FormData(event.currentTarget);

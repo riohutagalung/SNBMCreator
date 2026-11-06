@@ -1,3 +1,5 @@
+> **Supabase migration in progress (November 2026).** For the new backend, use [SUPABASE_MIGRATION.md](SUPABASE_MIGRATION.md). The PocketBase instructions below are legacy reference only; do not use them for new SNBM Creator deployments.
+
 # SNBM Creator — Hostinger Unlimited + PocketBase backend
 
 ## Recommended architecture
