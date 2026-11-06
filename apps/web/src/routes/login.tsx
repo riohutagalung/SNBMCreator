@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ClientResponseError } from 'pocketbase';
 import type { Route } from './+types/login';
 import { useNavigate } from 'react-router';
 import { seo } from '@/lib/seo';
@@ -13,7 +14,7 @@ export function meta({ matches, location }: Route.MetaArgs) {
 }
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,10 +26,22 @@ export default function Login() {
     setError('');
     setBusy(true);
     try {
-      await login(email, password);
+      const auth = await login(email.trim(), password);
+      if (auth.record?.role !== 'admin') {
+        logout();
+        setError('Akun berhasil dikenali, tetapi belum memiliki akses admin. Periksa role akun di PocketBase.');
+        return;
+      }
       navigate('/admin');
-    } catch {
-      setError('Email atau kata sandi salah. Coba kembali.');
+    } catch (error) {
+      const status = error instanceof ClientResponseError ? error.status : 0;
+      if (status === 400 || status === 401) {
+        setError('Login tidak berhasil. Pastikan akun admin sudah dibuat di PocketBase dan email serta kata sandinya sesuai.');
+      } else if (status === 404) {
+        setError('Layanan login PocketBase tidak ditemukan. Periksa alamat API PocketBase di konfigurasi website.');
+      } else {
+        setError('Tidak dapat menghubungi layanan login. Periksa koneksi dan konfigurasi PocketBase, lalu coba lagi.');
+      }
     } finally {
       setBusy(false);
     }
