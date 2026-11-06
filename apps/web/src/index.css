@@ -313,3 +313,45 @@ html,body,h1,h2,h3,h4,h5,h6,p,a,button,input,select,textarea,label,strong,small,
 /* Keep signatures in the free yellow space: category photography is framed on the right. */
 .snbm-hero-signature{left:6%;right:auto;top:22%;max-width:39%;font-size:clamp(17px,3vw,44px)}
 @media(max-width:760px){.snbm-hero-signature{left:5%;right:auto;top:20%;max-width:40%;font-size:clamp(13px,4vw,21px)}}
+
+
+/* 2026-11-06 HD imagery: the actual generated hero photos already include arrows,
+   product thumbnails, handwritten captions, and the correct selected-pill appearance.
+   Transparent semantic controls sit exactly over that artwork, avoiding duplicate UI. */
+.snbm-hero-visual{aspect-ratio:1672/941}
+.snbm-hero-visual .snbm-hero-category-image{object-fit:contain;object-position:center;width:100%;height:100%}
+.snbm-hero-visual .snbm-hero-arrow{
+  top:40%;width:7%;height:15%;min-width:0;border:0;
+  color:transparent!important;background:transparent!important;box-shadow:none!important;
+}
+.snbm-hero-visual .snbm-hero-arrow svg{opacity:0}
+.snbm-hero-visual .snbm-hero-prev{left:1.9%}
+.snbm-hero-visual .snbm-hero-next{right:1.9%}
+.snbm-hero-visual .snbm-hero-arrow:focus-visible{
+  outline:3px solid #2456ff!important;outline-offset:2px;box-shadow:none!important;
+}
+.snbm-hero-visual .snbm-category-controls{
+  bottom:7.2%;left:2.3%;right:2.3%;height:18%;
+  grid-template-columns:1.12fr 1fr 1fr 1.12fr 1fr;gap:1.2%;
+}
+.snbm-hero-visual .snbm-category-controls .snbm-category-hotspot,
+.snbm-hero-visual .snbm-category-controls .snbm-category-hotspot.is-featured,
+.snbm-hero-visual .snbm-category-controls .snbm-category-hotspot:hover{
+  display:block;min-height:0;width:100%;height:100%;
+  padding:0;border:2px solid transparent!important;border-radius:14px;
+  background:transparent!important;box-shadow:none!important;transform:none!important;
+  color:transparent!important;outline-offset:2px;
+}
+.snbm-hero-visual .snbm-category-controls .snbm-category-hotspot:focus-visible{
+  outline:3px solid #2456ff!important;
+}
+.snbm-hero-hotspot-label{position:absolute!important;width:1px!important;height:1px!important;
+  padding:0!important;margin:-1px!important;overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+@media(max-width:760px){
+ .snbm-hero-visual{aspect-ratio:1672/941}
+ .snbm-hero-visual .snbm-hero-arrow{top:39%;width:9%;height:18%}
+ .snbm-hero-visual .snbm-hero-prev{left:.8%}
+ .snbm-hero-visual .snbm-hero-next{right:.8%}
+ .snbm-hero-visual .snbm-category-controls{left:1.5%;right:1.5%;bottom:5%;height:22%;gap:.2%}
+}

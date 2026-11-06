@@ -57,7 +57,6 @@ export function Hero({ content: _content }: { content?: Record<string, string> }
           alt={pick(`Model dan produk kategori ${active.idName}`, `${active.en} fashion and product showcase`)}
           fetchPriority={activeIndex === 0 ? 'high' : undefined}
         />
-        <span className="snbm-hero-signature" aria-hidden="true">{pick(active.idName,active.en)}</span>
         <button type="button" className="snbm-hero-arrow snbm-hero-prev" aria-label={pick('Kategori sebelumnya','Previous category')} onClick={() => showCategory(activeIndex - 1)}><ArrowLeft size={19}/></button>
         <button type="button" className="snbm-hero-arrow snbm-hero-next" aria-label={pick('Kategori berikutnya','Next category')} onClick={() => showCategory(activeIndex + 1)}><ArrowRight size={19}/></button>
         <div className="snbm-category-controls" role="group" aria-label={pick('Pilih kategori fashion','Choose a fashion category')}>
@@ -68,8 +67,7 @@ export function Hero({ content: _content }: { content?: Record<string, string> }
             className={index === activeIndex ? 'snbm-category-hotspot is-featured' : 'snbm-category-hotspot'}
             aria-pressed={index === activeIndex}
           >
-            <img className="snbm-category-thumb" src={item.thumb} alt="" width="42" height="42" loading="lazy"/>
-            <span>{pick(item.idName, item.en)}</span>
+            <span className="snbm-hero-hotspot-label">{pick(item.idName, item.en)}</span>
           </button>)}
         </div>
       </div>
