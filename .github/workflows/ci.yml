@@ -47,6 +47,24 @@ jobs:
           CODE=$(curl -sS -o /tmp/brand-rejected.json -w '%{http_code}' -X POST -F 'name=Test' "http://127.0.0.1:3000/api/brand-enquiry")
           test "$CODE" = '503'
           grep -q '"error"' /tmp/brand-rejected.json
+          # Hostinger proxy may use an internal HTTP Request.url while the
+          # browser correctly sends https://snbmcreator.com as its Origin.
+          CODE=$(curl -sS -o /tmp/host-public-origin.json -w '%{http_code}' \
+            -H 'Origin: https://snbmcreator.com' -X POST -F 'name=Test' \
+            "http://127.0.0.1:3000/api/host-application")
+          test "$CODE" = '400'
+          CODE=$(curl -sS -o /tmp/host-www-origin.json -w '%{http_code}' \
+            -H 'Origin: https://www.snbmcreator.com' -X POST -F 'name=Test' \
+            "http://127.0.0.1:3000/api/host-application")
+          test "$CODE" = '400'
+          CODE=$(curl -sS -o /tmp/host-cross-site.json -w '%{http_code}' \
+            -H 'Origin: https://snbmcreator.com.evil.example' -X POST -F 'name=Test' \
+            "http://127.0.0.1:3000/api/host-application")
+          test "$CODE" = '403'
+          CODE=$(curl -sS -o /tmp/brand-public-origin.json -w '%{http_code}' \
+            -H 'Origin: https://snbmcreator.com' -X POST -F 'name=Test' \
+            "http://127.0.0.1:3000/api/brand-enquiry")
+          test "$CODE" = '503'
           CSS=$(find dist/apps/web/client/assets -name 'index-*.css' -print -quit)
           curl -fsS -o /dev/null "http://127.0.0.1:3000/assets/$(basename "$CSS")"
           for asset in logo.png favicon.png regular-hijab.webp regular-nonhijab.webp big-hijab.webp big-nonhijab.webp hero-still.webp hero-fashion.webm; do

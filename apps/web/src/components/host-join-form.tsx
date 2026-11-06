@@ -7,6 +7,7 @@ const MAX_VIDEO = 50 * 1024 * 1024;
 export function HostJoinForm() {
  const { pick } = useLanguage();
  const [uploadError,setUploadError] = useState('');
+ const [submissionError,setSubmissionError] = useState('');
  const form = useFormSubmission({ submit: async (_values,data) => {
    const cv = data.get('cv_file');
    const video = data.get('trial_video');
@@ -17,8 +18,24 @@ export function HostJoinForm() {
    if (!(video instanceof File && video.size) && !link) throw new Error('Unggah video atau sertakan tautan video trial');
    if (video instanceof File && !video.size) data.delete('trial_video');
    if (link && !/^https:\/\//i.test(link)) throw new Error('Tautan video harus menggunakan HTTPS');
-   const response = await fetch('/api/host-application', { method: 'POST', body: data });
-   if (!response.ok) throw new Error('Host application could not be submitted');
+   setSubmissionError('');
+   let response: Response;
+   try {
+     response = await fetch('/api/host-application', { method: 'POST', body: data });
+   } catch {
+     const message = pick('Koneksi ke server pendaftaran terputus. Coba lagi.', 'Could not connect to the application server. Try again.');
+     setSubmissionError(message);
+     throw new Error(message);
+   }
+   if (!response.ok) {
+     const payload: unknown = await response.json().catch(() => null);
+     const detail = payload && typeof payload === 'object' && 'error' in payload ? payload.error : null;
+     const message = typeof detail === 'string' && detail.length <= 240
+       ? detail
+       : pick('Pendaftaran gagal disimpan. Coba lagi.', 'Could not save the application. Please retry.');
+     setSubmissionError(message);
+     throw new Error(message);
+   }
  }});
  return <form className="contact-form" onSubmit={event=>{
    const data = new FormData(event.currentTarget);
@@ -46,7 +63,7 @@ export function HostJoinForm() {
   <button className="button" disabled={form.isSubmitting}>{form.isSubmitting?pick('Mengunggah dan mengirim...','Uploading and submitting...'):pick('Kirim pendaftaran host','Submit host application')}</button>
   {uploadError && <p role="alert">{uploadError}</p>}
   {form.isSuccess && <p role="status">{pick('Pendaftaran terkirim. Terima kasih, tim kami akan meninjau dokumenmu.','Application received. Thank you, our team will review your documents.')}</p>}
-  {form.isError && <p role="alert">{pick('Pendaftaran belum tersimpan. Layanan formulir mungkin belum aktif. Silakan hubungi contact@snbmcreator.com.','Application could not be saved. The form service may not be active yet. Contact contact@snbmcreator.com.')}</p>}
+  {form.isError && <p role="alert">{submissionError || pick('Pendaftaran belum tersimpan. Silakan coba lagi atau hubungi contact@snbmcreator.com.','Application could not be saved. Please retry or contact contact@snbmcreator.com.')}</p>}
   {Object.entries(form.fieldErrors).map(([key,error])=><p role="alert" key={key}>{key}: {error}</p>)}
  </form>;
 }

@@ -3,9 +3,34 @@ import { getAdminSupabase } from '@/lib/supabase-client.server';
 export const CV_LIMIT=10*1024*1024;
 export const VIDEO_LIMIT=50*1024*1024;
 const BODY_LIMIT=64*1024*1024;
-export function sameOrigin(request:Request) {
+/**
+ * The browser sends the PUBLIC site origin, but behind Hostinger's proxy the
+ * server Request.url can be an internal HTTP address. Never compare the two.
+ * Keep a small, explicit HTTPS allowlist instead of trusting Host/X-Forwarded-*.
+ */
+const OFFICIAL_ORIGINS = new Set([
+ 'https://snbmcreator.com',
+ 'https://www.snbmcreator.com',
+]);
+export function sameOrigin(request:Request):boolean {
  const origin=request.headers.get('origin');
- return !origin || origin===new URL(request.url).origin;
+ // Non-browser clients may omit Origin. This public endpoint is rate-limited
+ // and never authorizes a user based on cookies.
+ if (!origin) return true;
+ let parsed:URL;
+ try { parsed=new URL(origin); } catch { return false; }
+ if (parsed.origin!==origin) return false;
+ if (OFFICIAL_ORIGINS.has(origin)) return true;
+ const configured=process.env.SITE_URL;
+ if (configured) {
+   try {
+     const site=new URL(configured);
+     if (site.protocol==='https:' && !site.username && !site.password &&
+         origin===site.origin) return true;
+   } catch { /* Ignore an invalid site URL; never widen the allowlist. */ }
+ }
+ // Allow the exact local origin only while developing, not on production.
+ return process.env.NODE_ENV!=='production' && origin===new URL(request.url).origin;
 }
 export function text(form:FormData,key:string,max=3000){
  const value=form.get(key);
