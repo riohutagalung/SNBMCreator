@@ -4,6 +4,7 @@ import type { Route } from './+types/home';
 import { seo } from '@/lib/seo';
 import { heroImage } from '@/data/content';
 import { getPublicSupabase } from '@/lib/supabase-client.server';
+import { getPublishedArticles } from '@/lib/articles.server';
 import { Hero } from '@/components/home/hero';
 import { HostCampaign } from '@/components/home/host-campaign';
 import { Agency } from '@/components/home/agency';
@@ -13,6 +14,7 @@ import { Insights } from '@/components/home/insights';
 import { Collaborate } from '@/components/home/collaborate';
 
 export async function loader() {
+  const articlesPromise = getPublishedArticles();
   const content: Record<string, string> = {};
   const client = getPublicSupabase();
   if (client) {
@@ -25,7 +27,8 @@ export async function loader() {
     finally { clearTimeout(timeout); }
   }
   // Content changes should not remain hidden behind a cached homepage response.
-  return data({ content }, { headers: { 'Cache-Control': 'private, no-store, max-age=0, must-revalidate' } });
+  const articles = await articlesPromise;
+  return data({ content, articles }, { headers: { 'Cache-Control': 'private, no-store, max-age=0, must-revalidate' } });
 }
 
 export function meta({ matches, location }: Route.MetaArgs) {
@@ -65,7 +68,7 @@ export default function HomePage({ loaderData }: Route.ComponentProps) {
       <Agency content={content} />
       <Hosts content={content} />
       <Performance content={content} />
-      <Insights />
+      <Insights articles={loaderData.articles} limit={3} />
       <Collaborate content={content} />
     </main>
   );
