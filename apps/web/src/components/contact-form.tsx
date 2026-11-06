@@ -1,5 +1,4 @@
 import { Link, useSearchParams } from 'react-router';
-import { pocketbaseClient } from '@/lib/pocketbase-client';
 import { useFormSubmission } from '@/hooks/use-form-submission';
 import { useLanguage } from '@/lib/language';
 import { HostJoinForm } from '@/components/host-join-form';
@@ -9,7 +8,10 @@ export function ContactForm({ brandSettings = {} }: { brandSettings?: Record<str
   const isHost = params.get('jenis') === 'host';
   const isBrandFormOpen = brandSettings.brand_form_enabled === 'true';
   const { pick } = useLanguage();
-  const form = useFormSubmission({ submit: (_values, data) => pocketbaseClient.collection('snbm_enquiries').create(data) });
+  const form = useFormSubmission({ submit: async (_values, data) => {
+    const response = await fetch('/api/brand-enquiry', { method: 'POST', body: data });
+    if (!response.ok) throw new Error('Brand enquiry unavailable');
+  } });
   return <main className="page-rail contact-page refreshed-contact">
     <div>
       <span className="eyebrow">{pick('MARI TERHUBUNG. MARI TAMPIL LIVE.','LET’S TALK. LET’S GO LIVE.')}</span>
