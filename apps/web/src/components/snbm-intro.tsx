@@ -13,8 +13,8 @@ export function SnbmIntro() {
   if (!show) return null;
   return <div className="snbm-intro" role="status" aria-label="SNBM Creator">
     <div className="snbm-intro-inner">
-      <span className="snbm-intro-word">SNBM</span>
-      <span className="snbm-intro-sub">CREATOR®</span>
+      <img className="snbm-intro-mark" src="/assets/snbm/s-mark.svg" alt="" width="88" height="88"/>
+      <span className="snbm-intro-loading">Loading</span>
     </div>
   </div>;
 }

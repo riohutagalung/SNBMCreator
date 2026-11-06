@@ -188,3 +188,62 @@
   }
 }
 @media(prefers-reduced-motion:reduce){.snbm-hero-visual .snbm-hero-category-image{animation:none}}
+
+/* SNBM Nov 6: limited-scope typography, interactive fashion visual, uncropped recruitment. */
+.refreshed-header .brand, .refreshed-footer .brand {display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.snbm-brand-s {width:29px;height:29px;display:inline-block;flex:0 0 auto;object-fit:contain}
+.refreshed-footer .snbm-brand-s {width:31px;height:31px}
+.snbm-intro .snbm-intro-inner {gap:7px}
+.snbm-intro .snbm-intro-mark {width:88px;height:88px;object-fit:contain;animation:snbm-pop .6s ease both}
+.snbm-intro .snbm-intro-loading {color:#a9bbff;font:700 11px/1.4 'Plus Jakarta Sans',sans-serif;letter-spacing:.28em;text-transform:uppercase;margin-top:8px}
+.snbm-hero-grid {align-items:center}
+.snbm-hero-copy h1 {font-size:clamp(35px,3.5vw,58px);line-height:1.1;letter-spacing:-.05em}
+.snbm-hero-copy>p {max-width:540px;font-size:clamp(13px,1vw,15px);line-height:1.7}
+.snbm-hero-visual {aspect-ratio:16/9;overflow:hidden;isolation:isolate;background:#ffbf29}
+.snbm-hero-visual .snbm-hero-motion {position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1;display:block}
+.snbm-hero-visual .snbm-hero-category-image {position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;z-index:2;opacity:0;pointer-events:none;transition:opacity .36s ease}
+.snbm-hero-visual .snbm-hero-category-image.snbm-image-visible {opacity:1}
+.snbm-hero-visual .snbm-hero-overline {top:5%;left:4%;z-index:4;font-size:clamp(9px,.8vw,12px);font-weight:800;padding:9px 13px;line-height:1.1}
+.snbm-hero-arrow {position:absolute;top:46%;z-index:5;background:#fffffff0;color:#15264a;display:grid;place-items:center;width:37px;height:37px;border:0;border-radius:50%;box-shadow:0 1px 10px #00000018;cursor:pointer}
+.snbm-hero-prev{left:3%}.snbm-hero-next{right:3%}
+.snbm-hero-arrow:hover,.snbm-hero-arrow:focus-visible{color:var(--blue);outline:2px solid var(--blue);outline-offset:2px}
+.snbm-category-controls {left:3%;right:3%;bottom:5%;z-index:6;gap:6px}
+.snbm-category-controls .snbm-category-hotspot {font-family:'Plus Jakarta Sans',sans-serif;min-height:40px;background:#fffffff0;font-size:clamp(8px,.85vw,12px);line-height:1.3}
+/* The four models must be entirely visible, even when the desktop photo column narrows. */
+.snbm-recruitment .campaign-photo {aspect-ratio:16/9;min-height:unset;height:auto;max-width:none;overflow:hidden;background:#103780}
+.snbm-recruitment .campaign-photo img {position:relative;inset:auto;display:block;width:100%;height:auto;max-width:100%;object-fit:contain;object-position:center top}
+.snbm-recruitment {align-items:center}
+.site-footer,.site-footer p,.site-footer a,.site-footer h3,.site-footer button {font-family:'Plus Jakarta Sans',sans-serif}
+@media(max-width:760px){
+ .snbm-hero-grid{gap:17px}
+ .snbm-hero-copy h1{font-size:clamp(29px,7.1vw,37px)!important;letter-spacing:-.045em;line-height:1.13;margin:12px 0 12px}
+ .snbm-hero-copy>p{font-size:12px;line-height:1.6;max-width:unset}
+ .snbm-hero-copy .eyebrow{font-size:8px;letter-spacing:.75px}
+ .snbm-hero-actions{margin-top:17px;gap:9px}
+ .snbm-hero-actions .button{min-height:42px;font-size:10px;padding:9px 11px;gap:8px}
+ .snbm-hero-visual {width:100%;aspect-ratio:16/9;border-radius:12px}
+ .snbm-hero-arrow{width:26px;height:26px;top:43%}
+ .snbm-hero-arrow svg{width:16px;height:16px}
+ .snbm-hero-overline{top:4%!important;left:3%!important;padding:5px 8px!important;font-size:8px!important}
+ .snbm-category-controls {left:1.8%;right:1.8%;bottom:4%;gap:3px}
+ .snbm-category-controls .snbm-category-hotspot {min-height:29px;padding:3px 2px;font-size:clamp(6px,1.65vw,9px);border-radius:8px}
+ .snbm-hero-facts {gap:10px;margin-top:15px}
+ .snbm-recruitment{grid-template-columns:1fr;margin-top:18px}
+ .snbm-recruitment .campaign-photo{width:100%;aspect-ratio:16/9;min-height:0}
+ .snbm-recruitment .campaign-photo img{width:100%;height:auto;object-fit:contain}
+}
+@media(min-width:761px){.snbm-recruitment .campaign-photo{align-self:center}}
+@media(prefers-reduced-motion:reduce){
+ .snbm-hero-visual .snbm-hero-motion{display:none}
+ .snbm-hero-visual .snbm-hero-category-image{opacity:1}
+}
+
+@media(min-width:761px) {
+ .snbm-recruitment {grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr);}
+ .snbm-recruitment .campaign-copy{order:1;}
+ .snbm-recruitment .campaign-photo{order:2;}
+}
+@media(max-width:760px) {
+ .snbm-recruitment .campaign-photo{order:1}
+ .snbm-recruitment .campaign-copy{order:2}
+}

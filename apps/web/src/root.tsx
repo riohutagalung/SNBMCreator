@@ -20,7 +20,8 @@ import { WebMcpTools } from '@/components/webmcp-tools';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'stylesheet', href: stylesheet },
-	{ rel: 'icon', href: '/assets/snbm/favicon.png', type: 'image/png' },
+	{ rel: 'icon', href: '/assets/snbm/s-mark.svg', type: 'image/svg+xml' },
+	{ rel: 'apple-touch-icon', href: '/assets/snbm/s-mark.png' },
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
 	{
 		rel: 'preconnect',

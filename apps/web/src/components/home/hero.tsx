@@ -1,85 +1,129 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowUpRight, Radio } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useLanguage } from '@/lib/language';
 
-const categories = [
-  { id: 'wanita', idName: 'Fashion wanita', en: 'Women’s fashion', image: '/assets/snbm/regular-nonhijab.webp', position: 'center 28%' },
-  { id: 'muslim', idName: 'Fashion muslim', en: 'Modest fashion', image: '/assets/snbm/regular-hijab.webp', position: 'center 27%' },
-  { id: 'tas', idName: 'Tas wanita', en: 'Women’s bags', image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=1600&q=90&fit=contain', position: 'center center' },
-  { id: 'underwear', idName: 'Underwear', en: 'Underwear', image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=1600&q=90&fit=contain', position: 'center center' },
-  { id: 'anak', idName: 'Fashion kids', en: 'Kidswear', image: 'https://images.unsplash.com/photo-1503919005314-30d93d07d823?w=1600&q=90&fit=contain', position: 'center center' },
-] as const;
+type Category = {
+  id: string;
+  idName: string;
+  en: string;
+  image: string;
+  short: string;
+  enShort: string;
+};
+
+// Local, individually authored images. Never depend on an external image host
+// for the homepage. Order matches the 15.5 second looping motion sequence.
+const categories: Category[] = [
+  { id: 'wanita', idName: 'Fashion wanita', en: 'Women’s fashion', short: 'Koleksi fashion wanita', enShort: 'Women’s fashion', image: '/assets/snbm/hero-fashion-wanita.webp' },
+  { id: 'muslim', idName: 'Fashion muslim', en: 'Modest fashion', short: 'Fashion muslim', enShort: 'Modest fashion', image: '/assets/snbm/hero-fashion-muslim.webp' },
+  { id: 'tas', idName: 'Tas wanita', en: 'Women’s bags', short: 'Tas wanita', enShort: 'Women’s bags', image: '/assets/snbm/hero-tas-wanita.webp' },
+  { id: 'underwear', idName: 'Underwear', en: 'Underwear', short: 'Koleksi underwear', enShort: 'Underwear collection', image: '/assets/snbm/hero-underwear.webp' },
+  { id: 'anak', idName: 'Fashion kids', en: 'Kidswear', short: 'Fashion anak', enShort: 'Kidswear', image: '/assets/snbm/hero-fashion-kids.webp' },
+];
+
+const SECTION_SECONDS = 3;
 
 export function Hero({ content: _content }: { content?: Record<string, string> }) {
   const { pick } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const resumeAt = useRef(0);
-  const [category, setCategory] = useState(0);
-  const [showIntro, setShowIntro] = useState(true);
-  const [failedImages, setFailedImages] = useState<string[]>([]);
-  const chooseCategory = (index: number) => {
-    setCategory(index);
-    setShowIntro(false);
-    resumeAt.current = Date.now() + 12000;
-  };
+  const resetRef = useRef<number | undefined>(undefined);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [manualIndex, setManualIndex] = useState<number | null>(null);
+  const [videoUnavailable, setVideoUnavailable] = useState(false);
+
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
       video.muted = true;
-      void video.play().catch(() => { /* Static image remains visible on autoplay-blocked browsers. */ });
+      video.playsInline = true;
+      void video.play().catch(() => setVideoUnavailable(true));
     }
+    // The same carousel works even when autoplay/video is unavailable.
     const timer = window.setInterval(() => {
-      if (document.hidden || Date.now() < resumeAt.current) return;
-      setShowIntro(false);
-      setCategory((previous) => (previous + 1) % categories.length);
-    }, 4200);
-    return () => window.clearInterval(timer);
-  }, []);
+      if (document.hidden || manualIndex !== null) return;
+      if (videoUnavailable) setActiveIndex(index => (index + 1) % categories.length);
+    }, 3400);
+    return () => {
+      window.clearInterval(timer);
+      if (resetRef.current !== undefined) window.clearTimeout(resetRef.current);
+    };
+  }, [manualIndex, videoUnavailable]);
 
-  const active = categories[category];
+  const showCategory = (index: number) => {
+    const next = (index + categories.length) % categories.length;
+    setActiveIndex(next);
+    setManualIndex(next);
+    if (resetRef.current !== undefined) window.clearTimeout(resetRef.current);
+    // Resume autoplay after someone has finished exploring a category.
+    resetRef.current = window.setTimeout(() => {
+      setManualIndex(null);
+      const video = videoRef.current;
+      if (video) {
+        video.currentTime = next * SECTION_SECONDS;
+        void video.play().catch(() => setVideoUnavailable(true));
+      }
+    }, 10000);
+  };
+
+  const visible = categories[manualIndex ?? activeIndex];
   return <section className="hero snbm-hero" id="beranda">
     <div className="snbm-hero-grid">
       <div className="snbm-hero-copy">
-        <span className="eyebrow"><span className="live-dot"/> {pick('SELLER FASHION & AGENSI TALENTA LIVE', 'FASHION SELLER & LIVE TALENT AGENCY')}</span>
-        <h1>{pick('Dari pengalaman jualan,','Built on selling experience,')}<br/>{pick('kami hadirkan host live','we bring you live hosts')}<br/><span>{pick('yang siap berkembang.','ready to grow.')}</span></h1>
-        <p>{pick('Kami tahu ritme live shopping karena menjalaninya sendiri sebagai seller fashion, dengan pengalaman penjualan ribuan hingga puluhan ribu pcs produk dalam satu hari. Kini, pengalaman itu kami bawa untuk mencari, membina, dan menghadirkan talenta host live shopping terbaik bagi brand yang ingin terus berkembang.', 'As fashion sellers, we know live shopping firsthand, with experience selling thousands to tens of thousands of pieces in a single day. Today, we use that experience to discover, train, and connect promising live-shopping hosts with growing brands.')}</p>
+        <span className="eyebrow"><span className="live-dot"/>{pick('SELLER & AGENSI TALENTA FASHION', 'FASHION SELLER & TALENT AGENCY')}</span>
+        <h1>{pick('Kembangkan brand bersama', 'Grow your brand with')} <span>{pick('host live yang tepat.', 'the right live hosts.')}</span></h1>
+        <p>{pick(
+          'Berawal dari pengalaman berjualan fashion, termasuk penjualan ribuan hingga puluhan ribu produk dalam sehari, kini kami fokus mencari dan membina talenta untuk menjadi host live shopping andalan berbagai brand.',
+          'With years of experience selling fashion, including days with thousands to tens of thousands of items sold, we now focus on finding and developing live-shopping hosts for brands.'
+        )}</p>
         <div className="snbm-hero-actions">
           <Link className="button" to="/kontak?jenis=brand">{pick('Mulai kolaborasi','Work with us')} <ArrowUpRight size={19}/></Link>
           <Link className="button snbm-button-outline" to="/gabung-host">{pick('Daftar jadi host','Apply as a host')} <ArrowUpRight size={19}/></Link>
         </div>
       </div>
-      <div className="snbm-hero-visual" aria-label={pick('Kategori fashion SNBM Creator yang bisa dipilih','Interactive SNBM Creator fashion categories')}>
-        <video ref={videoRef} className={showIntro ? 'is-visible' : 'is-hidden'} autoPlay muted loop playsInline preload="metadata" poster="/assets/snbm/hero-still.webp?v=4k3" aria-hidden="true">
-          <source src="/assets/snbm/hero-fashion-hd.mp4?v=4k3" type="video/mp4"/>
+      <div className="snbm-hero-visual" role="region" aria-label={pick('Pilihan kategori fashion SNBM Creator','SNBM Creator fashion category gallery')}>
+        <video
+          ref={videoRef}
+          className="snbm-hero-motion"
+          autoPlay muted loop playsInline preload="metadata"
+          poster="/assets/snbm/hero-fashion-wanita.webp"
+          onTimeUpdate={event => {
+            if (manualIndex !== null) return;
+            const current = Math.min(categories.length - 1, Math.floor(event.currentTarget.currentTime / SECTION_SECONDS));
+            setActiveIndex(current);
+          }}
+          onError={() => setVideoUnavailable(true)}
+          aria-hidden="true"
+        >
+          <source src="/assets/snbm/hero-fashion-categories.mp4" type="video/mp4"/>
         </video>
-        <img className="snbm-hero-poster" src="/assets/snbm/hero-still.webp?v=4k3" width="3840" height="2160" alt="" fetchPriority="high"/>
-        {!showIntro && <img
-          className="snbm-hero-category-image"
-          key={active.id}
-          src={failedImages.includes(active.id) ? '/assets/snbm/hero-still.webp?v=4k3' : active.image}
-          alt={pick('Pilihan kategori: ' + active.idName, 'Selected category: ' + active.en)}
-          style={{ objectPosition: active.position }}
-          onError={() => setFailedImages((items) => items.includes(active.id) ? items : [...items, active.id])}
-        />}
-        <span className="snbm-hero-overline"><Radio size={14}/> {pick('FASHION LIVE COMMERCE','FASHION LIVE COMMERCE')}</span>
-        <div className="snbm-category-controls" role="group" aria-label={pick('Pilih kategori fashion','Choose a fashion category')}>
+        <img
+          key={visible.id}
+          className={manualIndex !== null || videoUnavailable ? 'snbm-hero-category-image snbm-image-visible' : 'snbm-hero-category-image'}
+          src={visible.image}
+          width="1920" height="1080"
+          alt={pick(`Tampilan ${visible.idName}`, `${visible.en} showcase`)}
+          fetchPriority={visible.id === 'wanita' ? 'high' : undefined}
+        />
+        <span className="snbm-hero-overline">{pick(visible.short, visible.enShort)}</span>
+        <button type="button" className="snbm-hero-arrow snbm-hero-prev" aria-label={pick('Kategori sebelumnya','Previous category')} onClick={() => showCategory(activeIndex - 1)}><ArrowLeft size={19}/></button>
+        <button type="button" className="snbm-hero-arrow snbm-hero-next" aria-label={pick('Kategori berikutnya','Next category')} onClick={() => showCategory(activeIndex + 1)}><ArrowRight size={19}/></button>
+        <div className="snbm-category-controls" role="group" aria-label={pick('Pilih kategori fashion','Select fashion category')}>
           {categories.map((item, index) => <button
             key={item.id}
             type="button"
-            onClick={() => chooseCategory(index)}
-            className={`snbm-category-hotspot ${category === index ? 'is-featured' : ''}`}
-            aria-pressed={category === index && !showIntro}
-            title={pick(item.idName,item.en)}
-          >{pick(item.idName,item.en)}</button>)}
+            onClick={() => showCategory(index)}
+            className={index === (manualIndex ?? activeIndex) ? 'snbm-category-hotspot is-featured' : 'snbm-category-hotspot'}
+            aria-pressed={index === (manualIndex ?? activeIndex)}
+          >{pick(item.idName, item.en)}</button>)}
         </div>
       </div>
     </div>
-    <div className="snbm-hero-facts" aria-label={pick('Tentang bisnis SNBM Creator','About SNBM Creator')}>
-      <strong>{pick('Yang kami kerjakan', 'What we do')}</strong>
-      <div><span className="snbm-fact-icon">01</span><p><b>{pick('Seller fashion','Fashion retailer')}</b><small>{pick('Berpengalaman menjual ribuan pcs per hari','Thousands of pieces sold daily')}</small></p></div>
+    <div className="snbm-hero-facts" aria-label={pick('Yang kami kerjakan','What we do')}>
+      <strong>{pick('Yang kami kerjakan','What we do')}</strong>
+      <div><span className="snbm-fact-icon">01</span><p><b>{pick('Seller fashion','Fashion seller')}</b><small>{pick('Menjual produk langsung','Direct product sales')}</small></p></div>
       <div><span className="snbm-fact-icon">02</span><p><b>{pick('Host in-house','In-house hosts')}</b><small>{pick('Kesempatan kerja full time','Full-time opportunities')}</small></p></div>
-      <div><span className="snbm-fact-icon">03</span><p><b>{pick('Host freelance','Freelance hosts')}</b><small>{pick('Kolaborasi part time','Part-time collaborations')}</small></p></div>
+      <div><span className="snbm-fact-icon">03</span><p><b>{pick('Host freelance','Freelance hosts')}</b><small>{pick('Kolaborasi part time','Part-time collaboration')}</small></p></div>
     </div>
   </section>;
 }
