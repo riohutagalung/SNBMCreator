@@ -201,7 +201,17 @@ function ContentEditor({ row, onSave }: { row: ContentRow; onSave: (value: strin
   return (
     <article className="admin-card">
       <div className="admin-card-head"><strong>{row.label || row.key}</strong><span className="admin-tag">{row.type}</span></div>
-      {row.type === 'textarea' ? (
+      {row.key === 'brand_form_enabled' ? (
+        <select aria-label="Status formulir kerja sama brand" value={value === 'true' ? 'true' : 'false'} onChange={e => setValue(e.target.value)}>
+          <option value="false">Coming Soon — formulir brand ditutup</option>
+          <option value="true">Aktif — formulir brand menerima permintaan</option>
+        </select>
+      ) : row.key === 'brand_logo_font' ? (
+        <select aria-label="Font logo SNBM Creator" value={value === 'Plus Jakarta Sans' ? 'Plus Jakarta Sans' : 'Space Grotesk'} onChange={e => setValue(e.target.value)}>
+          <option value="Space Grotesk">Space Grotesk (model pertama)</option>
+          <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+        </select>
+      ) : row.type === 'textarea' ? (
         <textarea value={value} onChange={e => setValue(e.target.value)} rows={4} />
       ) : row.type === 'color' ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

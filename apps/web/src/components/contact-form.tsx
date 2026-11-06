@@ -4,16 +4,19 @@ import { useFormSubmission } from '@/hooks/use-form-submission';
 import { useLanguage } from '@/lib/language';
 import { HostJoinForm } from '@/components/host-join-form';
 
-export function ContactForm() {
+export function ContactForm({ brandSettings = {} }: { brandSettings?: Record<string,string> }) {
   const [params, setParams] = useSearchParams();
   const isHost = params.get('jenis') === 'host';
+  const isBrandFormOpen = brandSettings.brand_form_enabled === 'true';
   const { pick } = useLanguage();
   const form = useFormSubmission({ submit: (_values, data) => pocketbaseClient.collection('snbm_enquiries').create(data) });
   return <main className="page-rail contact-page refreshed-contact">
     <div>
       <span className="eyebrow">{pick('MARI TERHUBUNG. MARI TAMPIL LIVE.','LET’S TALK. LET’S GO LIVE.')}</span>
       <h1>{pick('Koneksi dimulai','A connection starts')}<br/>{pick('dari ', 'with a ')}<span>{pick('sapaan.','conversation.')}</span></h1>
-      <p className="page-intro">{pick('Punya brand yang ingin berkembang atau tertarik bergabung sebagai host? Pilih tujuanmu lalu isi formulir yang sesuai.','Represent a brand or interested in joining as a host? Choose your enquiry type and complete the relevant form.')}</p>
+      <p className="page-intro">{!isHost && !isBrandFormOpen
+        ? pick('Kami sedang menyiapkan tim host live shopping untuk kerja sama brand. Pendaftaran host tetap dibuka.', 'We are preparing our live-shopping host team for brand partnerships. Host applications remain open.')
+        : pick('Punya brand yang ingin berkembang atau tertarik bergabung sebagai host? Pilih tujuanmu lalu isi formulir yang sesuai.','Represent a brand or interested in joining as a host? Choose your enquiry type and complete the relevant form.')}</p>
       <label className="contact-intent-label">{pick('Saya ingin','I would like to')}
         <select value={isHost ? 'host' : 'brand'} onChange={event => setParams({ jenis: event.target.value })}>
           <option value="brand">{pick('Bekerja sama sebagai brand','Discuss a brand partnership')}</option>
@@ -23,7 +26,19 @@ export function ContactForm() {
       <p>{pick('Basis operasional:', 'Based in:')} <strong>{pick('Jakarta Barat, Indonesia.','West Jakarta, Indonesia.')}</strong><br/>{pick('Detail alamat studio dikonfirmasi sebelum kunjungan.','Studio visit details are confirmed by appointment.')}</p>
       <Link className="text-link" to="/privasi">{pick('Informasi pengelolaan data pribadi','How we handle personal information')}</Link>
     </div>
-    {isHost ? <HostJoinForm/> : <form className="contact-form" onSubmit={form.onSubmit}>
+    {isHost ? <HostJoinForm/> : !isBrandFormOpen ? <section className="contact-form snbm-brand-coming-soon" aria-labelledby="snbm-brand-coming-soon-title">
+      <span className="eyebrow">{pick('KOLABORASI BRAND', 'BRAND PARTNERSHIPS')}</span>
+      <h2 id="snbm-brand-coming-soon-title">{pick(
+        brandSettings.brand_coming_soon_title_id || 'Coming Soon — Kolaborasi Brand',
+        brandSettings.brand_coming_soon_title_en || 'Coming Soon — Brand Partnerships'
+      )}</h2>
+      <p>{pick(
+        brandSettings.brand_coming_soon_body_id || 'Kami sedang memilih dan mempersiapkan talenta host live shopping terbaik agar setiap kerja sama berjalan dengan maksimal. Formulir kerja sama brand akan kami buka setelah tim siap. Terima kasih sudah tertarik dengan SNBM Creator!',
+        brandSettings.brand_coming_soon_body_en || 'We are carefully building our live-shopping host team. Brand partnership enquiries will open once our talent team is ready. Thank you for your interest in SNBM Creator!'
+      )}</p>
+      <p className="snbm-brand-coming-soon-note">{pick('Sementara ini, pendaftaran host tetap tersedia.', 'Host applications are still open.')}</p>
+      <Link className="button" to="/gabung-host">{pick('Daftar jadi host', 'Apply as a host')}</Link>
+    </section> : <form className="contact-form" onSubmit={form.onSubmit}>
       <input {...form.honeypotProps}/><input type="hidden" name="kind" value="Brand"/>
       <label>{pick('Nama lengkap','Full name')}<input name="name" required maxLength={120} placeholder={pick('Nama Anda','Your name')}/></label>
       <div className="form-pair"><label>Email<input name="email" required type="email" placeholder="nama@brand.com"/></label><label>{pick('Nomor WhatsApp','WhatsApp number')}<input name="phone" maxLength={30} type="tel" placeholder="08…"/></label></div>

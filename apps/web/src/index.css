@@ -355,3 +355,48 @@ html,body,h1,h2,h3,h4,h5,h6,p,a,button,input,select,textarea,label,strong,small,
  .snbm-hero-visual .snbm-hero-next{right:.8%}
  .snbm-hero-visual .snbm-category-controls{left:1.5%;right:1.5%;bottom:5%;height:22%;gap:.2%}
 }
+
+
+/* Brand identity refresh: exact uploaded transparent S icon + original wordmark font. */
+.snbm-brand-lockup .snbm-brand-words strong,
+.snbm-brand-lockup .snbm-brand-words .snbm-brand-creator,
+.snbm-brand-lockup .snbm-brand-words .snbm-brand-creator sup {
+  font-family:var(--snbm-logo-font,'Space Grotesk',sans-serif)!important;
+}
+.snbm-brand-lockup .snbm-brand-words strong {font-weight:700!important;letter-spacing:-.067em!important}
+.snbm-brand-lockup .snbm-brand-creator {letter-spacing:.36em!important;font-weight:600!important}
+.snbm-intro .snbm-brand-intro {
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  justify-content:center!important;gap:clamp(12px,2.7vw,36px)!important;text-align:left!important;
+  max-width:calc(100vw - 36px);
+}
+.snbm-intro .snbm-brand-intro .snbm-brand-icon {
+  width:clamp(78px,14vw,154px)!important;height:clamp(78px,14vw,154px)!important;
+  object-fit:contain;flex-shrink:0;
+}
+.snbm-intro .snbm-brand-intro .snbm-brand-words {display:flex!important;flex-direction:column!important;align-items:flex-start!important}
+.snbm-intro .snbm-brand-intro .snbm-brand-words strong {
+  font-size:clamp(58px,10vw,130px)!important;
+  line-height:.9!important;letter-spacing:-.067em!important;
+}
+.snbm-intro .snbm-brand-intro .snbm-brand-creator {
+  margin-top:clamp(7px,1.4vw,18px)!important;
+  font-size:clamp(12px,2vw,21px)!important;
+  letter-spacing:clamp(.19em,.5vw,.4em)!important;
+  line-height:1.2!important;
+}
+.snbm-brand-coming-soon {
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  gap:19px;min-height:300px;
+}
+.snbm-brand-coming-soon h2 {font-size:clamp(27px,3.5vw,43px);line-height:1.15;letter-spacing:-.045em}
+.snbm-brand-coming-soon p {font-size:clamp(13px,1vw,16px);line-height:1.75;max-width:610px}
+.snbm-brand-coming-soon .snbm-brand-coming-soon-note {font-weight:600;color:var(--blue)}
+.snbm-brand-coming-soon .button {margin-top:3px}
+@media(max-width:760px) {
+ .snbm-intro .snbm-brand-intro {gap:10px!important}
+ .snbm-intro .snbm-brand-intro .snbm-brand-icon {width:clamp(70px,19vw,95px)!important;height:clamp(70px,19vw,95px)!important}
+ .snbm-intro .snbm-brand-intro .snbm-brand-words strong {font-size:clamp(47px,13vw,73px)!important}
+ .snbm-intro .snbm-brand-intro .snbm-brand-creator{font-size:clamp(9px,2.5vw,14px)!important;margin-top:6px!important}
+ .snbm-brand-coming-soon {min-height:240px;padding:25px}
+}
