@@ -150,3 +150,41 @@
 @media(max-width:1100px){.snbm-hero-grid{grid-template-columns:1fr 1.05fr;gap:22px;}.snbm-hero-copy h1{font-size:clamp(33px,4vw,48px)}.snbm-hero-actions .button{font-size:11px;padding:10px}.snbm-recruitment .campaign-copy{padding:24px;}}
 @media(max-width:760px){.snbm-hero-grid{grid-template-columns:1fr;gap:18px}.snbm-hero-copy{padding:0}.snbm-hero-copy h1{font-size:clamp(36px,9vw,50px);margin:17px 0}.snbm-hero-copy>p{font-size:13px;}.snbm-hero-visual{border-radius:12px}.snbm-hero-overline{font-size:7px;top:8px;left:8px;padding:5px}.snbm-category-hotspot{border-radius:9px;border-width:1px}.snbm-hero-facts{grid-template-columns:1fr 1fr;gap:12px;margin-top:17px;padding:16px 0}.snbm-hero-facts>strong{font-size:15px}.snbm-hero-facts>div{padding-left:10px}.snbm-fact-icon{font-size:15px}.snbm-hero-facts b{font-size:11px}.snbm-hero-facts small{font-size:9px}.snbm-recruitment{grid-template-columns:1fr;margin:18px 5% 0}.snbm-recruitment .campaign-photo{min-height:0;aspect-ratio:16/9}.snbm-recruitment .campaign-copy{padding:23px}.snbm-recruitment h2{font-size:29px}}
 @media(prefers-reduced-motion:reduce){.snbm-hero-visual video{display:none}.snbm-hero-visual .snbm-hero-poster{z-index:1}}
+
+/* 2026-11-06: accessible responsive fashion category gallery and uncropped recruitment portrait. */
+.snbm-hero-visual .snbm-hero-category-image {
+  position:absolute;inset:0;z-index:2;width:100%;height:100%;
+  object-fit:contain;background:#ffc22c;animation:snbm-photo-in .45s ease-out both;
+}
+.snbm-hero-visual video.is-hidden {visibility:hidden;opacity:0;pointer-events:none}
+.snbm-hero-visual video.is-visible {visibility:visible;opacity:1}
+.snbm-hero-visual .snbm-hero-overline {z-index:4}
+.snbm-category-controls {
+  position:absolute;z-index:5;left:2.5%;right:2.5%;bottom:5%;display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;align-items:stretch;
+}
+.snbm-category-controls .snbm-category-hotspot {
+  position:static;width:auto;height:auto;min-width:0;min-height:40px;cursor:pointer;
+  padding:7px 5px;border:2px solid transparent;background:rgba(255,255,255,.95);
+  color:#101b36;border-radius:12px;font:700 clamp(8px,.82vw,12px)/1.2 'Plus Jakarta Sans',sans-serif;
+  box-shadow:0 2px 12px #121b2924;transition:border-color .2s,transform .2s;
+}
+.snbm-category-controls .snbm-category-hotspot:hover,
+.snbm-category-controls .snbm-category-hotspot:focus-visible {border-color:#2456ff;transform:translateY(-2px);outline-offset:2px}
+.snbm-category-controls .snbm-category-hotspot.is-featured {border-color:#2456ff}
+.snbm-recruitment .campaign-photo {
+  height:auto;min-height:0;aspect-ratio:16/9;align-self:center;overflow:hidden;
+}
+.snbm-recruitment .campaign-photo img {
+  position:static;display:block;width:100%;height:100%;
+  object-fit:contain;object-position:center;max-width:100%;
+}
+@keyframes snbm-photo-in {from {opacity:.6;transform:scale(1.015)} to {opacity:1;transform:scale(1)}}
+@media(max-width:760px) {
+  .snbm-recruitment .campaign-photo {aspect-ratio:16/9;min-height:0}
+  .snbm-category-controls {left:2%;right:2%;bottom:5%;gap:3px}
+  .snbm-category-controls .snbm-category-hotspot {
+    padding:5px 2px;min-height:31px;border-radius:8px;border-width:1.5px;font-size:clamp(6px,1.7vw,9px);
+  }
+}
+@media(prefers-reduced-motion:reduce){.snbm-hero-visual .snbm-hero-category-image{animation:none}}
