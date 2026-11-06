@@ -44,11 +44,13 @@ export function Hero({ content: _content }: { content?: Record<string, string> }
       if (document.hidden || manualIndex !== null) return;
       if (videoUnavailable) setActiveIndex(index => (index + 1) % categories.length);
     }, 3400);
-    return () => {
-      window.clearInterval(timer);
-      if (resetRef.current !== undefined) window.clearTimeout(resetRef.current);
-    };
+    return () => window.clearInterval(timer);
   }, [manualIndex, videoUnavailable]);
+
+  // The manual category timeout must survive re-renders; only clear it on unmount.
+  useEffect(() => () => {
+    if (resetRef.current !== undefined) window.clearTimeout(resetRef.current);
+  }, []);
 
   const showCategory = (index: number) => {
     const next = (index + categories.length) % categories.length;
