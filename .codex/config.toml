@@ -1,0 +1,5 @@
+# SNBM Creator — Hostinger hosted MCP (OAuth; no API tokens stored in this repo).
+# Codex loads this configuration when the project is trusted.
+# Authenticate on your own machine with: codex mcp login hostinger
+[mcp_servers.hostinger]
+url = "https://mcp.hostinger.com"
