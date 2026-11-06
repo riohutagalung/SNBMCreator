@@ -37,8 +37,8 @@ export async function getPublishedArticle(slug: string): Promise<Article | null>
   const timer = setTimeout(() => controller.abort(), 3500);
   try {
     const { data, error } = await db.from('snbm_articles').select('*')
-      .eq('slug', slug).eq('published', true).maybeSingle()
-      .abortSignal(controller.signal);
+      .eq('slug', slug).eq('published', true)
+      .abortSignal(controller.signal).maybeSingle();
     if (error) return fallback.find(a => a.slug === slug) ?? null;
     return data as Article | null;
   } catch { return fallback.find(a => a.slug === slug) ?? null; }
