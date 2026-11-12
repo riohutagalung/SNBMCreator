@@ -1,140 +1,94 @@
 /**
- * SNBM Creator — Host registration to Sheets + permanent private Drive files.
- * Deploy as Web app: Execute as Me / Who has access: Anyone.
- * Script Properties: SNBM_SHEETS_API_TOKEN (same 32+ character server secret).
- * Script is intentionally limited to the "Pendaftaran Host" tab.
- * Host records are upserted by ID; Status Seleksi and Catatan HR are preserved.
- * Optional: SNBM_HOST_FOLDER_ID = an existing PRIVATE Drive folder ID.
- * Google Drive files stay restricted by Google account permissions (not public).
+ * SNBM Creator — Host-only private attachment archiver for the EXISTING
+ * Apps Script Code.gs provided by the project owner.
+ *
+ * Put this content in a NEW script file HostDriveSync.gs in the SAME
+ * Apps Script project. Do not replace Code.gs or create another doPost().
+ *
+ * In the existing doPost(e), replace only:
+ *   const row = isHost ? mapHost_(record) : mapBrand_(record);
+ * with:
+ *   const row = isHost ? mapHost_(archiveHostFiles_(record)) : mapBrand_(record);
+ *
+ * Brand routing, authentication, upsert, formatting and manual status/notes
+ * remain untouched. No public sharing of applicants' files.
  */
-const SNBM_SHEET_ID = '1jjOwqdOerJApVYo3ftygUvAh0U20Luqfb4VhoqssISw';
-const SNBM_HOST_TAB = 'Pendaftaran Host';
-const SNBM_FILE_FOLDER_KEY = 'SNBM_HOST_FOLDER_ID';
-const SNBM_FILE_FOLDER_NAME = 'SNBM Creator - Berkas Pendaftar (Privat)';
-const SNBM_SOURCE_HOST = 'ypqlcnxpuwpzhnfnuxsz.supabase.co';
 
-function doPost(e) {
-  const lock = LockService.getScriptLock();
-  try {
-    const body = JSON.parse(e && e.postData && e.postData.contents || '{}');
-    const expected = PropertiesService.getScriptProperties().getProperty('SNBM_SHEETS_API_TOKEN');
-    if (!expected || expected.length < 32 || body.token !== expected) {
-      return reply_({ok:false,error:'Unauthorized'});
-    }
-    if (body.type !== 'host') {
-      // Leave the separate brand intake unchanged: this script handles HOST ONLY.
-      return reply_({ok:false,error:'This endpoint is for host applications only'});
-    }
-    if (!body.record || !isUuid_(body.record.id)) return reply_({ok:false,error:'Invalid host ID'});
-    if (!lock.tryLock(25000)) return reply_({ok:false,error:'Busy, retry'});
-    try {
-      const result = saveHost_(body.record);
-      return reply_({ok:true,id:body.record.id,cv_url:result.cv,video_url:result.video});
-    } finally { lock.releaseLock(); }
-  } catch (err) {
-    // Never log signed URLs, applicant data, or token.
-    console.error('Host sync failed: ' + String(err && err.message || err).slice(0,150));
-    return reply_({ok:false,error:'Host sync failed; retry later'});
+const SNBM_ARCHIVE = Object.freeze({
+  folderProperty: 'SNBM_HOST_FOLDER_ID',
+  folderName: 'SNBM Creator - Berkas Host Privat',
+  sourcePrefix: 'https://ypqlcnxpuwpzhnfnuxsz.supabase.co/storage/v1/object/sign/snbm-host-private/'
+});
+
+function archiveHostFiles_(record) {
+  if (!record || !record._drive_files || typeof record._drive_files !== 'object') {
+    throw new Error('HOST_ARCHIVE_FILES_MISSING');
   }
+  const files = record._drive_files;
+  const cv = archiveHostFile_(record, files.cv, 'cv');
+  const video = record.trial_video_path
+    ? archiveHostFile_(record, files.video, 'video')
+    : '';
+  // Return a shallow copy so existing mapHost_ and upsert_ remain unchanged.
+  // The two output columns are now restricted Google Drive links, never JWTs.
+  return Object.assign({}, record, {cv_path: cv, trial_video_path: video});
 }
 
-function reply_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function isUuid_(v) {
-  return typeof v === 'string' &&
-    /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v);
-}
-
-function folder_() {
+function archiveHostFolder_() {
   const props = PropertiesService.getScriptProperties();
-  let folderId = props.getProperty(SNBM_FILE_FOLDER_KEY);
-  if (folderId) return DriveApp.getFolderById(folderId);
-  const f = DriveApp.createFolder(SNBM_FILE_FOLDER_NAME);
-  props.setProperty(SNBM_FILE_FOLDER_KEY, f.getId());
-  return f;
+  const existing = props.getProperty(SNBM_ARCHIVE.folderProperty);
+  if (existing) return DriveApp.getFolderById(existing);
+  const folder = DriveApp.createFolder(SNBM_ARCHIVE.folderName);
+  props.setProperty(SNBM_ARCHIVE.folderProperty, folder.getId());
+  return folder;
 }
 
-function safeSourceUrl_(url) {
-  if (typeof url !== 'string') throw Error('Missing source');
-  // Apps Script's V8 runtime does not consistently expose the WHATWG URL class.
-  const prefix = 'https://' + SNBM_SOURCE_HOST + '/storage/v1/object/sign/snbm-host-private/';
-  if (url.indexOf(prefix) !== 0 || url.indexOf('?token=') < 0) {
-    throw Error('Untrusted file origin');
+function archiveHostFile_(record, descriptor, kind) {
+  if (!descriptor || typeof descriptor.url !== 'string' ||
+      typeof descriptor.name !== 'string') {
+    throw new Error('HOST_ARCHIVE_INVALID_' + kind.toUpperCase());
   }
-  return url;
-}
-
-function copyIntoDrive_(entry, kind, id, existing) {
-  if (!entry) return existing || '';
-  if (!entry.url || typeof entry.name !== 'string') throw Error('Invalid document');
-  const name = (kind === 'cv' ? 'CV_' : 'Video_') + id +
-    (kind === 'cv' ? (/\.docx?$/i.test(entry.name) ? entry.name.match(/\.docx?$/i)[0] : '.pdf')
-                   : (/\.(mov|webm)$/i.test(entry.name) ? entry.name.match(/\.(mov|webm)$/i)[0] : '.mp4'));
-  const driveFolder = folder_();
-  const prior = driveFolder.getFilesByName(name);
-  if (prior.hasNext()) return 'https://drive.google.com/file/d/' + prior.next().getId() + '/view';
-  const src = safeSourceUrl_(entry.url);
-  const response = UrlFetchApp.fetch(src, {muteHttpExceptions:true,followRedirects:true});
-  if (response.getResponseCode() !== 200) throw Error('Source download failed');
+  const source = descriptor.url;
+  // Tokenized URL is accepted only from the SNBM private Supabase Storage
+  // origin. Never write this URL to the spreadsheet or to logs.
+  if (source.indexOf(SNBM_ARCHIVE.sourcePrefix) !== 0 ||
+      !/[?&]token=[^&]+/.test(source) ||
+      /[\\\s]/.test(source)) {
+    throw new Error('HOST_ARCHIVE_UNTRUSTED_SOURCE');
+  }
+  const uuid = String(record.id || '').toLowerCase();
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(uuid)) {
+    throw new Error('HOST_ARCHIVE_BAD_ID');
+  }
+  const extension = String(descriptor.name).split('.').pop().toLowerCase();
+  const supported = kind === 'cv' ? ['pdf','doc','docx'] : ['mp4','mov','webm'];
+  if (supported.indexOf(extension) === -1) throw new Error('HOST_ARCHIVE_BAD_EXTENSION');
+  const name = (kind === 'cv' ? 'CV_' : 'Video_') + uuid + '.' + extension;
+  const folder = archiveHostFolder_();
+  // Retries must not duplicate files when a prior upload succeeded.
+  const matches = folder.getFilesByName(name);
+  if (matches.hasNext()) {
+    const existing = matches.next();
+    return 'https://drive.google.com/file/d/' + existing.getId() + '/view';
+  }
+  const response = UrlFetchApp.fetch(source, {
+    muteHttpExceptions: true,
+    followRedirects: false
+  });
+  if (response.getResponseCode() !== 200) throw new Error('HOST_ARCHIVE_DOWNLOAD_FAILED');
   const blob = response.getBlob().setName(name);
-  const file = driveFolder.createFile(blob);
-  // File stays private: no ANYONE_WITH_LINK permissions are added.
-  return 'https://drive.google.com/file/d/' + file.getId() + '/view';
+  if (blob.getBytes().length === 0) throw new Error('HOST_ARCHIVE_EMPTY_FILE');
+  const created = folder.createFile(blob);
+  // Intentionally restricted: Google Drive access is granted to the owner
+  // and any individuals the owner explicitly shares the folder with.
+  return 'https://drive.google.com/file/d/' + created.getId() + '/view';
 }
 
-function saveHost_(r) {
-  const sh = SpreadsheetApp.openById(SNBM_SHEET_ID).getSheetByName(SNBM_HOST_TAB);
-  if (!sh) throw Error('Pendaftaran Host tab not found');
-  const last = sh.getLastRow();
-  let rowNum = 0;
-  if (last > 1) {
-    const existing = sh.getRange(2, 2, last - 1, 1)
-      .createTextFinder(String(r.id)).matchEntireCell(true).findNext();
-    if (existing) rowNum = existing.getRow();
-  }
-  const original = rowNum ? sh.getRange(rowNum, 1, 1, 23).getValues()[0] : Array(23).fill('');
-  const extra = r._drive_files || {};
-  // Column Q/R always contain durable Drive links, never temporary Supabase JWTs.
-  const cv = copyIntoDrive_(extra.cv, 'cv', r.id,
-    typeof original[16] === 'string' && original[16].startsWith('https://drive.google.com/file/d/') ? original[16] : '');
-  const video = copyIntoDrive_(extra.video, 'video', r.id,
-    typeof original[17] === 'string' && original[17].startsWith('https://drive.google.com/file/d/') ? original[17] : '');
-  const date = r.created_at ? new Date(r.created_at) : new Date();
-  const consent = r.consent_at ? new Date(r.consent_at) : '';
-  const currency = Number(r.best_daily_gmv) || 0;
-  const values = [
-    date, String(r.id), clean_(r.name), clean_(r.email), phone_(r.phone),
-    clean_(r.employment_type), clean_(r.city), clean_(r.size_type),
-    clean_(r.style), r.weight == null ? '' : Number(r.weight),
-    clean_(r.category), clean_(r.experience),
-    r.daily_live_hours == null ? '' : Number(r.daily_live_hours),
-    currency, clean_(r.social_accounts), clean_(r.portfolio_url),
-    cv, video, clean_(r.trial_video_url),
-    'Ya', consent,
-    original[21] || 'Baru', original[22] || ''
-  ];
-  const target = rowNum || last + 1;
-  sh.getRange(target, 1, 1, 23).setValues([values]);
-  sh.getRange(target, 1).setNumberFormat('dd mmm yyyy, hh:mm:ss');
-  sh.getRange(target, 21).setNumberFormat('dd mmm yyyy, hh:mm:ss');
-  sh.getRange(target, 14).setNumberFormat('"Rp" #,##0');
-  return {cv,video};
-}
-function clean_(value) {
-  if (value == null) return '';
-  const s = String(value);
-  // Escape formulas in user input.
-  return /^[=+@\-\t\r]/.test(s) ? "'" + s : s;
-}
-function phone_(value) { return value ? "'" + String(value).replace(/^'/,'') : ''; }
-
-/** Run once from editor to authorize Spreadsheet, Drive and UrlFetch scopes. */
-function verifyHostIntegration() {
-  const sh = SpreadsheetApp.openById(SNBM_SHEET_ID).getSheetByName(SNBM_HOST_TAB);
-  if (!sh) throw Error('Missing Host tab');
-  const dir = folder_();
-  console.log('Host tab and private Drive folder ready: ' + dir.getName());
+/** Run once to authorize Drive access and initialize the private folder. */
+function verifySNBMHostDrive() {
+  const tab = SpreadsheetApp.openById(SNBM_SHEET.spreadsheetId)
+    .getSheetByName(SNBM_SHEET.hostTab);
+  if (!tab) throw new Error('HOST_TAB_NOT_FOUND');
+  const folder = archiveHostFolder_();
+  Logger.log('Host Drive archiving ready: ' + folder.getName());
 }
