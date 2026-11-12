@@ -1,28 +1,37 @@
-# SNBM Creator — sinkronisasi Host ke Google Sheets dan Google Drive
+# SNBM Creator — integrasi Google Drive di Apps Script yang sudah ada
 
-Hanya untuk tab **Pendaftaran Host**. Alur Brand yang sudah ada tidak diubah.
+**Tidak perlu Web App baru.** Gunakan deployment tetap:
+https://script.google.com/macros/s/AKfycbyfAs-Ic_P4_FvmA3KlMTsbbd_z5AgBV-LVqQQ7p8nlT6gd7jAOkPFkFruiGhBa7S7acA/exec
 
-## Tujuan
-1. Host mengirim formulir pada website; server menyimpan data dan berkas privat di Supabase.
-2. Server mengirim metadata + **URL unduhan sementara, hanya server-ke-server** ke Apps Script Host.
-3. Apps Script menyalin CV/video ke folder **Google Drive privat**, lalu menulis baris Host di Google Sheets.
-4. Kolom Q (CV) dan R (Video) menyimpan **link file Google Drive permanen** (tanpa token JWT di sel).
-5. Setiap ID pendaftaran hanya satu baris; Status Seleksi dan Catatan HR tidak tertimpa.
-6. Sinkronisasi gagal tidak menghapus data di Supabase. Tombol **Sinkronkan Google Sheets** di /admin mencoba lagi.
+## Pasang di Apps Script yang sudah digunakan
+1. Buka project Apps Script yang memegang deployment di atas.
+2. Jangan hapus atau timpa `Code.gs` lama; fungsi `doPost`, `mapBrand_`, `upsert_`, filter, dan styling Brand tetap dipakai.
+3. Tambahkan file script baru bernama `HostDriveSync.gs`. Tempel seluruh isi `HostDriveSync.gs` dari folder ini.
+4. Di `Code.gs` lama, cari **satu baris**:
 
-## Aktivasi (diperlukan karena konektor GitHub tidak dapat mengubah deployment Apps Script Anda)
-- Buka [script.google.com](https://script.google.com) dan buat **proyek baru** khusus Host (jangan timpa project Brand).
-- Ganti isi `Code.gs` dengan isi `HostDriveSync.gs` di folder ini.
-- Di **Project Settings → Script Properties**, tambahkan `SNBM_SHEETS_API_TOKEN` bernilai **persis sama** dengan Hostinger (minimal 32 karakter). Jangan menaruh token di kode atau GitHub.
-- Opsional: `SNBM_HOST_FOLDER_ID` untuk folder Drive privat yang sudah ada; jika tidak ada, script membuat folder privat sendiri saat verifikasi pertama.
-- Jalankan `verifyHostIntegration()` sekali dari editor, lalu selesaikan dialog izin Sheets, Google Drive, dan URL Fetch.
-- **Deploy → New deployment → Web app → Execute as: Me → Who has access: Anyone**. Akses API tetap divalidasi dengan token server; berkas Drive tetap privat.
-- Salin URL `/exec` ke Hostinger Environment variable `SNBM_HOST_DRIVE_WEBAPP_URL`, lalu **redeploy website**. Jangan mengganti `SNBM_SHEETS_WEBAPP_URL`: endpoint lama tetap dipakai untuk Brand.
-- Dari dashboard admin `/admin`, tekan **Sinkronkan Google Sheets** untuk pendaftaran yang tertunda. Periksa kolom Q/R serta buka dokumen menggunakan akun Google pemilik folder atau yang diberikan akses.
-- Jika tim lain perlu membaca berkas, bagikan folder Drive **hanya kepada akun Google tim tersebut**, bukan akses publik.
+   `const row = isHost ? mapHost_(record) : mapBrand_(record);`
 
-## Penting
-- Script mendownload file dari Supabase selama URL sumber masih hidup (10 menit), lalu menyalinnya ke Drive. URL sementara tidak disimpan ke Sheets dan akan kedaluwarsa sendiri.
-- Link Drive tidak mempunyai JWT kedaluwarsa. Namun, akses tetap mengikuti izin Drive; file yang dihapus, dipindahkan ke Trash, atau izin aksesnya dicabut tidak bisa dibuka.
-- Apps Script UrlFetch punya batas ukuran respons sekitar 50 MB. Video yang mendekati batas tersebut mungkin perlu upload alternatif; data tetap di Supabase jika sinkronisasi gagal.
-- Sinkronisasi otomatis pada submission baru berjalan setelah deployment Apps Script Host dan variabel Hostinger diaktifkan. Jangan menganggap perubahan GitHub saja telah mengaktifkan integrasi live.
+   Ubah menjadi:
+
+   `const row = isHost ? mapHost_(archiveHostFiles_(record)) : mapBrand_(record);`
+
+5. Opsional tetapi dianjurkan: ubah judul header Q/R dari `CV — Path Privat di Supabase` dan `Video Upload — Path Privat di Supabase` menjadi `CV — Google Drive` dan `Video — Google Drive` **hanya setelah** logika baru berfungsi. Jika mengubah array `HOST_COLUMNS`, ubah juga header Q1/R1 sebelum menjalankan `verifySNBMSheets()`, karena fungsi setup lama akan menolak ketidakcocokan header. **Jangan jalankan setup ulang hanya untuk langkah ini.**
+6. Dari Project Settings pastikan Script Property `SNBM_SHEETS_API_TOKEN` masih sama dengan Hostinger; token tidak perlu diganti.
+7. Jalankan `verifySNBMHostDrive()` sekali agar izin Drive diminta dan folder privat dibuat. Script Property `SNBM_HOST_FOLDER_ID` akan dibuat otomatis; bisa juga ditetapkan ke folder privat yang sudah ada.
+8. **Deploy > Manage deployments > Edit > Version: New version > Deploy**. URL deployment **tetap**.
+9. Setelah website Hostinger selesai memperbarui kode GitHub, dari dashboard /admin gunakan **Sinkronkan Google Sheets** untuk memasukkan pendaftaran yang masih tertunda.
+
+## Cara kerja
+- Backend tetap menyimpan form dan file di Supabase; ini menjadi backup jika sinkronisasi Drive gagal.
+- Saat ada pendaftaran Host, server membuat tautan sementara 10 menit **hanya untuk transmisi backend-ke-Apps Script**.
+- Apps Script mengambil berkas sekali, menyimpannya ke folder Drive privat, dan mengganti kolom Q/R dengan URL Drive permanen. **Sel tidak berisi URL token JWT**.
+- File Drive hanya dapat dibuka oleh pemilik atau orang yang diberi izin di Drive. Link tidak kedaluwarsa, selama file dan akses masih ada.
+- Pengiriman ulang menggunakan ID pendaftaran dan nama file yang tetap, sehingga tidak membuat baris atau file ganda. Kolom status dan catatan manual dipertahankan.
+- Brand dan tab Kerja Sama Brand tetap menggunakan logika sebelumnya.
+- File yang sudah ada di Supabase namun pernah disinkronkan sebelum integrasi ini perlu sinkronisasi ulang secara terkontrol agar link lamanya diganti. Pendaftaran yang masih pending bisa disinkronkan lewat /admin.
+- Video mendekati 50 MB dapat terkena batas ukuran atau waktu eksekusi Apps Script. Jika terjadi, backend akan mempertahankan data di Supabase dan menandai sinkronisasi belum selesai, bukan menghapus berkas.
+
+## Jangan
+- Jangan mempublikasikan folder Drive untuk `Anyone with the link`; data pelamar bersifat pribadi.
+- Jangan menyalin token API atau signed URL ke source GitHub, log, ataupun Google Sheets.
+- Jangan mengganti atau menimpa `doPost` versi lama dengan `doPost` baru.
