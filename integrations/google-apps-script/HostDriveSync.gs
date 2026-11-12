@@ -59,13 +59,11 @@ function folder_() {
 
 function safeSourceUrl_(url) {
   if (typeof url !== 'string') throw Error('Missing source');
-  const parsed = new URL(url);
-  if (parsed.protocol !== 'https:' ||
-      parsed.hostname !== SNBM_SOURCE_HOST ||
-      !parsed.pathname.startsWith('/storage/v1/object/sign/snbm-host-private/')) {
+  // Apps Script's V8 runtime does not consistently expose the WHATWG URL class.
+  const prefix = 'https://' + SNBM_SOURCE_HOST + '/storage/v1/object/sign/snbm-host-private/';
+  if (url.indexOf(prefix) !== 0 || url.indexOf('?token=') < 0) {
     throw Error('Untrusted file origin');
   }
-  if (!parsed.searchParams.has('token')) throw Error('Missing temporary source token');
   return url;
 }
 
