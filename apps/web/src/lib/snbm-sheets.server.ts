@@ -17,9 +17,9 @@ const tables: Record<SheetType, string> = {
 };
 
 function endpoint(type: SheetType = 'host'): string | null {
-  // Host-only Drive archiver is deployed independently; brand keeps its
-  // existing endpoint untouched. Old deployment remains functional until
-  // SNBM_HOST_DRIVE_WEBAPP_URL has been configured.
+  // Both Host and Brand use the existing Apps Script deployment by default.
+  // A dedicated Host endpoint remains an optional override; no new deployment
+  // or environment variable is needed for the supplied existing Apps Script.
   const configured = ((type === 'host' && process.env.SNBM_HOST_DRIVE_WEBAPP_URL)
     || process.env.SNBM_SHEETS_WEBAPP_URL || DEFAULT_SHEETS_WEBAPP).trim();
   try {
@@ -37,9 +37,9 @@ export function sheetsMirrorConfigured(): boolean {
 }
 
 /**
- * The Sheet needs permanent clickable links, but the actual CV/video paths stay
- * private in Supabase. The visitor must authenticate as an SNBM admin and pass
- * RLS before the website can mint a 60-second signed download URL.
+ * Host files remain private in Supabase as a reliable fallback. The receiver
+ * archives them to restricted Google Drive and writes durable Drive file links
+ * into Sheet columns Q/R; temporary source URLs never appear in Sheet cells.
  */
 async function sheetFriendlyRecord(type: SheetType, record: SavedRecord): Promise<SavedRecord> {
   if (type !== 'host') return record;
@@ -87,7 +87,7 @@ async function deliverToSheet(type: SheetType, record: SavedRecord): Promise<boo
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       body: JSON.stringify({ token, type, record: await sheetFriendlyRecord(type, record) }),
       redirect: 'follow',
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(type === 'host' ? 90000 : 12000),
       cache: 'no-store',
     });
     if (!response.ok) return false;
