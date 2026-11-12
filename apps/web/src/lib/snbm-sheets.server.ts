@@ -16,8 +16,12 @@ const tables: Record<SheetType, string> = {
   brand: 'snbm_enquiries',
 };
 
-function endpoint(): string | null {
-  const configured = (process.env.SNBM_SHEETS_WEBAPP_URL || DEFAULT_SHEETS_WEBAPP).trim();
+function endpoint(type: SheetType = 'host'): string | null {
+  // Host-only Drive archiver is deployed independently; brand keeps its
+  // existing endpoint untouched. Old deployment remains functional until
+  // SNBM_HOST_DRIVE_WEBAPP_URL has been configured.
+  const configured = ((type === 'host' && process.env.SNBM_HOST_DRIVE_WEBAPP_URL)
+    || process.env.SNBM_SHEETS_WEBAPP_URL || DEFAULT_SHEETS_WEBAPP).trim();
   try {
     const url = new URL(configured);
     if (url.protocol !== 'https:' || url.hostname !== 'script.google.com' ||
@@ -73,7 +77,7 @@ async function sheetFriendlyRecord(type: SheetType, record: SavedRecord): Promis
 
 async function deliverToSheet(type: SheetType, record: SavedRecord): Promise<boolean> {
   const token = process.env.SNBM_SHEETS_API_TOKEN;
-  const url = endpoint();
+  const url = endpoint(type);
   if (!token || token.length < 32 || !url) return false;
   try {
     // Apps Script's ContentService may redirect to googleusercontent.com.
