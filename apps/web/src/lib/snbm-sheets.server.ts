@@ -37,17 +37,37 @@ export function sheetsMirrorConfigured(): boolean {
  * private in Supabase. The visitor must authenticate as an SNBM admin and pass
  * RLS before the website can mint a 60-second signed download URL.
  */
-function sheetFriendlyRecord(type: SheetType, record: SavedRecord): SavedRecord {
+async function sheetFriendlyRecord(type: SheetType, record: SavedRecord): Promise<SavedRecord> {
   if (type !== 'host') return record;
   const base = 'https://snbmcreator.com/berkas-host';
   const urlFor = (kind: 'cv' | 'video', path: unknown) =>
     typeof path === 'string' && path.length > 0
       ? base + '?id=' + encodeURIComponent(record.id) + '&jenis=' + kind
       : '';
+  // Temporary source URLs are sent server-to-server only. The Apps Script
+  // downloads the objects into private Google Drive and writes permanent Drive
+  // links into the Sheet. Never put signed URLs in Sheet cells or browser JSON.
+  const db = getAdminSupabase();
+  if (!db) throw new Error('Supabase backend unavailable');
+  const files: Record<string, { url: string; name: string } | null> = { cv: null, video: null };
+  for (const [kind, path] of [
+    ['cv', record.cv_path],
+    ['video', record.trial_video_path],
+  ] as const) {
+    if (typeof path !== 'string' || !path) continue;
+    const { data, error } = await db.storage.from('snbm-host-private')
+      .createSignedUrl(path, 600);
+    if (error || !data?.signedUrl) throw new Error('Cannot prepare private file for Drive');
+    const ext = path.split('.').pop()?.replace(/[^a-z0-9]/gi, '') || (kind === 'cv' ? 'pdf' : 'mp4');
+    files[kind] = { url: data.signedUrl, name: (kind === 'cv' ? 'CV' : 'Video') + '_' + record.id + '.' + ext };
+  }
   return {
     ...record,
+    // Legacy stable admin links remain for an old Apps Script deployment.
+    // The updated Apps Script replaces these with permanent private Drive URLs.
     cv_path: urlFor('cv', record.cv_path),
     trial_video_path: urlFor('video', record.trial_video_path),
+    _drive_files: files,
   };
 }
 
@@ -61,7 +81,7 @@ async function deliverToSheet(type: SheetType, record: SavedRecord): Promise<boo
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      body: JSON.stringify({ token, type, record: sheetFriendlyRecord(type, record) }),
+      body: JSON.stringify({ token, type, record: await sheetFriendlyRecord(type, record) }),
       redirect: 'follow',
       signal: AbortSignal.timeout(12000),
       cache: 'no-store',
