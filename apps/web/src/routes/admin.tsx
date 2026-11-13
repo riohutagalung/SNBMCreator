@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Route } from './+types/admin';
 import { Link } from 'react-router';
 import { seo } from '@/lib/seo';
@@ -55,6 +55,7 @@ export default function Admin() {
   const [tab, setTab] = useState<'ringkas' | 'host' | 'kontak' | 'konten' | 'artikel'>('ringkas');
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const autoSyncStarted = useRef(false);
   const syncSheets = async () => {
     if (!supabase) { setSyncMessage('Supabase belum terhubung.'); return; }
     setSyncBusy(true);
@@ -84,6 +85,18 @@ export default function Admin() {
       setSyncMessage(error instanceof Error ? error.message : 'Tidak bisa menyinkronkan Google Sheets.');
     } finally { setSyncBusy(false); }
   };
+
+
+  // The server already mirrors new submissions immediately. Visiting /admin
+  // also recovers previously pending submissions without requiring a button.
+  // Run once per mount (not on realtime updates) to avoid sync storms.
+  useEffect(() => {
+    if (!user || autoSyncStarted.current) return;
+    autoSyncStarted.current = true;
+    void syncSheets();
+    // Deliberately run once on authenticated mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const enquiries = useSupabaseRecords<Enquiry>('snbm_enquiries', { sort: '-created_at', realtime: true });
   const hosts = useSupabaseRecords<HostApp>('snbm_host_applications', { sort: '-created_at', realtime: true });
